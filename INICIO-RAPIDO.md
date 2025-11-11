@@ -31,9 +31,29 @@
    Valor: zCtizKB3CGFB
    ```
 
-### 2️⃣ Configurar no cPanel
+### 2️⃣ Verificar se tem Node.js no cPanel
 
-Siga o guia completo em: **`SETUP-CPANEL.md`**
+**IMPORTANTE**: Nem todos os cPanels têm suporte a Node.js!
+
+1. Acesse seu cPanel
+2. Procure por:
+   - **"Node.js Selector"**
+   - **"Setup Node.js App"**
+   - **"Node.js"**
+   - **"Application Manager"**
+
+3. **Se encontrar**: Siga o guia **`CONFIGURAR-NODEJS-CPANEL.md`**
+
+4. **Se NÃO encontrar**: Você tem 3 opções:
+   - **Opção A**: Usar Railway/Render para backend (recomendado - grátis e fácil)
+   - **Opção B**: Solicitar Node.js ao provedor
+   - **Opção C**: Usar VPS separado
+
+   **Veja detalhes em: `CONFIGURAR-NODEJS-CPANEL.md`**
+
+### 3️⃣ Configurar no cPanel
+
+Siga o guia completo em: **`SETUP-CPANEL.md`** ou **`CONFIGURAR-NODEJS-CPANEL.md`**
 
 **Resumo rápido:**
 
@@ -46,11 +66,8 @@ Siga o guia completo em: **`SETUP-CPANEL.md`**
    - Importar `db.sql` via phpMyAdmin
 
 3. **Configurar aplicação Node.js:**
-   - No cPanel: **Node.js Selector** → **Create Application**
-   - **Application Root**: `gestao.artnaweb.com.br/backend`
-   - **Application URL**: `api.gestao.artnaweb.com.br` (ou outro)
-   - **Startup File**: `server.js`
-   - **Variáveis de ambiente**: (veja `SETUP-CPANEL.md`)
+   - **Se tiver Node.js no cPanel**: Veja `CONFIGURAR-NODEJS-CPANEL.md`
+   - **Se não tiver**: Use Railway/Render (veja `CONFIGURAR-NODEJS-CPANEL.md`)
 
 4. **Criar arquivo `.htaccess`** em `public_html/`:
    ```apache
