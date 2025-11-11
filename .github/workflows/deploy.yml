@@ -25,6 +25,9 @@ jobs:
         # Criar .env.production com URL da API
         echo "VITE_API_URL=https://api.gestao.artnaweb.com.br/api" > .env.production
         npm run build
+        # Verificar se os arquivos foram gerados
+        ls -la dist/
+        ls -la dist/assets/ || echo "Pasta assets não encontrada"
     
     - name: Deploy Backend to VPS/cPanel via FTP
       uses: SamKirkland/FTP-Deploy-Action@4.3.0
@@ -51,9 +54,11 @@ jobs:
         password: ${{ secrets.CPANEL_FTP_PASS }}
         local-dir: ./frontend/dist/
         server-dir: public_html/
+        dangerous-clean-slate: false
         exclude: |
           **/.git*
           **/.git*/**
+          **/.ftp-deploy-sync-state.json
     
     - name: Create .htaccess for Frontend
       run: |
