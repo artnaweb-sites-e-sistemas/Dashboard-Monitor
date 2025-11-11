@@ -56,6 +56,21 @@ jobs:
         echo "=== Conteúdo de frontend/dist/assets/ ==="
         ls -la frontend/dist/assets/ || echo "Pasta assets não existe"
     
+    - name: Create .htaccess for Frontend
+      run: |
+        cat > frontend/dist/.htaccess << 'EOF'
+        <IfModule mod_rewrite.c>
+          RewriteEngine On
+          RewriteBase /
+          RewriteRule ^index\.html$ - [L]
+          RewriteCond %{REQUEST_FILENAME} !-f
+          RewriteCond %{REQUEST_FILENAME} !-d
+          RewriteRule . /index.html [L]
+        </IfModule>
+        EOF
+        # Verificar se foi criado
+        ls -la frontend/dist/.htaccess
+    
     - name: Deploy Frontend Build to cPanel via FTP
       uses: SamKirkland/FTP-Deploy-Action@4.3.0
       with:
@@ -69,32 +84,5 @@ jobs:
           **/.git*
           **/.git*/**
           **/.ftp-deploy-sync-state.json
-          **/.htaccess
     
-    - name: Create and Deploy .htaccess for Frontend
-      run: |
-        cat > .htaccess-content << 'EOF'
-        <IfModule mod_rewrite.c>
-          RewriteEngine On
-          RewriteBase /
-          RewriteRule ^index\.html$ - [L]
-          RewriteCond %{REQUEST_FILENAME} !-f
-          RewriteCond %{REQUEST_FILENAME} !-d
-          RewriteRule . /index.html [L]
-        </IfModule>
-        EOF
-        # Criar pasta temporária e copiar .htaccess
-        mkdir -p .htaccess-temp
-        cp .htaccess-content .htaccess-temp/.htaccess
-    
-    - name: Deploy .htaccess to Frontend
-      uses: SamKirkland/FTP-Deploy-Action@4.3.0
-      with:
-        server: ${{ secrets.CPANEL_FTP_HOST }}
-        username: ${{ secrets.CPANEL_FTP_USER }}
-        password: ${{ secrets.CPANEL_FTP_PASS }}
-        local-dir: ./.htaccess-temp/
-        server-dir: public_html/
-        dangerous-clean-slate: false
-      continue-on-error: true
 
