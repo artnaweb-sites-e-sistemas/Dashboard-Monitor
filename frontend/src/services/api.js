@@ -4,9 +4,20 @@ import axios from 'axios'
 // Em desenvolvimento: usa /api (proxy do Vite)
 // Em produção: usa a variável de ambiente ou fallback para /api
 const getBaseURL = () => {
+  // Verificar se estamos em produção
+  const isProd = import.meta.env.PROD || window.location.hostname !== 'localhost'
+  const apiUrl = import.meta.env.VITE_API_URL
+  
+  // Debug (remover em produção final)
+  if (isProd) {
+    console.log('[API Config] Modo produção detectado')
+    console.log('[API Config] VITE_API_URL:', apiUrl)
+    console.log('[API Config] import.meta.env.PROD:', import.meta.env.PROD)
+  }
+  
   // Se estiver em produção e tiver variável de ambiente configurada
-  if (import.meta.env.PROD && import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL
+  if (isProd && apiUrl) {
+    return apiUrl
   }
   // Em desenvolvimento ou se não houver variável, usa /api (proxy)
   return '/api'

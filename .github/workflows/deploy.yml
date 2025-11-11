@@ -24,7 +24,10 @@ jobs:
         npm install
         # Criar .env.production com URL da API
         echo "VITE_API_URL=https://api.gestao.artnaweb.com.br/api" > .env.production
-        npm run build
+        # Verificar se o arquivo foi criado
+        cat .env.production
+        # Build com variável de ambiente explícita
+        VITE_API_URL=https://api.gestao.artnaweb.com.br/api npm run build
         # Verificar se os arquivos foram gerados
         ls -la dist/
         ls -la dist/assets/ || echo "Pasta assets não encontrada"
