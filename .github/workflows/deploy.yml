@@ -52,4 +52,29 @@ jobs:
         exclude: |
           **/.git*
           **/.git*/**
+    
+    - name: Create .htaccess for Frontend
+      run: |
+        mkdir -p .htaccess-temp
+        cat > .htaccess-temp/.htaccess << 'EOF'
+        <IfModule mod_rewrite.c>
+          RewriteEngine On
+          RewriteBase /
+          RewriteRule ^index\.html$ - [L]
+          RewriteCond %{REQUEST_FILENAME} !-f
+          RewriteCond %{REQUEST_FILENAME} !-d
+          RewriteRule . /index.html [L]
+        </IfModule>
+        EOF
+    
+    - name: Deploy .htaccess to Frontend
+      uses: SamKirkland/FTP-Deploy-Action@4.3.0
+      with:
+        server: ${{ secrets.CPANEL_FTP_HOST }}
+        username: ${{ secrets.CPANEL_FTP_USER }}
+        password: ${{ secrets.CPANEL_FTP_PASS }}
+        local-dir: ./.htaccess-temp
+        server-dir: /home/artnaw49/gestao.artnaweb.com.br/public_html
+        dangerous-clean-slate: false
+      continue-on-error: true
 
