@@ -24,7 +24,7 @@ jobs:
         npm install
         npm run build
     
-    - name: Deploy Backend to cPanel via FTP
+    - name: Deploy Backend to VPS/cPanel via FTP
       uses: SamKirkland/FTP-Deploy-Action@4.3.0
       with:
         server: ${{ secrets.CPANEL_FTP_HOST }}
@@ -40,6 +40,19 @@ jobs:
           **/*.log
           **/.vscode/**
           **/.idea/**
+    
+    - name: Install Backend Dependencies and Restart (SSH)
+      if: ${{ secrets.CPANEL_SSH_HOST != '' }}
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.CPANEL_SSH_HOST }}
+        username: ${{ secrets.CPANEL_SSH_USER }}
+        key: ${{ secrets.CPANEL_SSH_KEY }}
+        script: |
+          cd /home/artnaw49/gestao.artnaweb.com.br/backend
+          npm install --production
+          pm2 restart artnaweb-monitor-backend || pm2 start server.js --name "artnaweb-monitor-backend"
+      continue-on-error: true
     
     - name: Deploy Frontend Build to cPanel via FTP
       uses: SamKirkland/FTP-Deploy-Action@4.3.0
