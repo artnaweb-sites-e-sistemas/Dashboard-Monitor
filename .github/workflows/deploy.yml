@@ -33,7 +33,7 @@ jobs:
         username: ${{ secrets.CPANEL_FTP_USER }}
         password: ${{ secrets.CPANEL_FTP_PASS }}
         local-dir: ./backend/
-        server-dir: backend/
+        server-dir: /backend/
         exclude: |
           **/.git*
           **/.git*/**
@@ -50,7 +50,7 @@ jobs:
         username: ${{ secrets.CPANEL_FTP_USER }}
         password: ${{ secrets.CPANEL_FTP_PASS }}
         local-dir: ./frontend/dist/
-        server-dir: public_html/
+        server-dir: /public_html/
         exclude: |
           **/.git*
           **/.git*/**
@@ -76,7 +76,7 @@ jobs:
         username: ${{ secrets.CPANEL_FTP_USER }}
         password: ${{ secrets.CPANEL_FTP_PASS }}
         local-dir: ./.htaccess-temp/
-        server-dir: public_html/
+        server-dir: /public_html/
         dangerous-clean-slate: false
       continue-on-error: true
 
