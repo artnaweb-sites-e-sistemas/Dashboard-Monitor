@@ -44,7 +44,7 @@ jobs:
           **/.idea/**
     
     - name: Install Backend Dependencies and Restart (SSH)
-      if: ${{ secrets.CPANEL_SSH_HOST != '' }}
+      if: ${{ secrets.CPANEL_SSH_HOST }}
       uses: appleboy/ssh-action@master
       with:
         host: ${{ secrets.CPANEL_SSH_HOST }}
@@ -52,7 +52,7 @@ jobs:
         key: ${{ secrets.CPANEL_SSH_KEY }}
         script: |
           cd /home/artnaw49/gestao.artnaweb.com.br/backend
-          npm install --production
+          npm install --production --legacy-peer-deps
           pm2 restart artnaweb-monitor-backend || pm2 start server.js --name "artnaweb-monitor-backend"
       continue-on-error: true
     
