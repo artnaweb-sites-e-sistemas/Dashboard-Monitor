@@ -332,6 +332,62 @@ router.put('/:id/wordfence', async (req, res) => {
   }
 });
 
+// Atualizar cliente vinculado a um site
+router.put('/:id/client', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { client_id } = req.body;
+
+    // Verificar se o site existe
+    const [sites] = await db.execute(
+      'SELECT id FROM sites WHERE id = ?',
+      [id]
+    );
+
+    if (sites.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Site não encontrado'
+      });
+    }
+
+    // Se client_id foi fornecido, verificar se existe
+    if (client_id) {
+      const [clients] = await db.execute(
+        'SELECT id FROM clients WHERE id = ?',
+        [client_id]
+      );
+      if (clients.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Cliente não encontrado'
+        });
+      }
+    }
+
+    // Atualizar client_id do site
+    await db.execute(
+      `UPDATE sites 
+       SET client_id = ?,
+           updated_at = NOW()
+       WHERE id = ?`,
+      [client_id || null, id]
+    );
+
+    res.json({
+      success: true,
+      message: 'Cliente vinculado atualizado com sucesso'
+    });
+
+  } catch (error) {
+    console.error('Update site client error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao atualizar cliente vinculado'
+    });
+  }
+});
+
 // Remover site
 router.delete('/:id', async (req, res) => {
   try {

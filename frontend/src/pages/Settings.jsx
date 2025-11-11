@@ -107,7 +107,11 @@ const SitesWordfenceConfig = () => {
   const queryClient = useQueryClient()
   const [expandedSiteId, setExpandedSiteId] = useState(null)
   const [wordfenceConfigs, setWordfenceConfigs] = useState({})
+  const [clientConfigs, setClientConfigs] = useState({})
   const [savingSiteId, setSavingSiteId] = useState(null)
+  const [savingClientSiteId, setSavingClientSiteId] = useState(null)
+  const [showNewClientModal, setShowNewClientModal] = useState(false)
+  const [newClient, setNewClient] = useState({ name: '', email: '', phone: '' })
   const [alertModal, setAlertModal] = useState({
     isOpen: false,
     type: 'info',
@@ -124,17 +128,30 @@ const SitesWordfenceConfig = () => {
     staleTime: 30000
   })
 
+  // Buscar clientes
+  const { data: clientsData } = useQuery('clients', async () => {
+    const response = await api.get('/clients')
+    return response.data.data
+  }, {
+    staleTime: 60000
+  })
+
   // Inicializar configurações quando sites carregarem
   useEffect(() => {
     if (sitesData) {
       const configs = {}
+      const clientConfigs = {}
       sitesData.forEach(site => {
         configs[site.id] = {
           wordfence_enabled: site.wordfence_enabled || false,
           wordfence_api_key: site.wordfence_api_key || ''
         }
+        clientConfigs[site.id] = {
+          client_id: site.client?.id || ''
+        }
       })
       setWordfenceConfigs(configs)
+      setClientConfigs(clientConfigs)
     }
   }, [sitesData])
 
@@ -147,7 +164,6 @@ const SitesWordfenceConfig = () => {
     {
       onSuccess: (data, variables) => {
         queryClient.invalidateQueries('sites')
-        setExpandedSiteId(null)
         setSavingSiteId(null)
         setAlertModal({
           isOpen: true,
@@ -170,6 +186,79 @@ const SitesWordfenceConfig = () => {
     }
   )
 
+  // Mutação para atualizar cliente vinculado
+  const updateClientMutation = useMutation(
+    async ({ siteId, client_id }) => {
+      const response = await api.put(`/sites/${siteId}/client`, { client_id: client_id || null })
+      return response.data
+    },
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries('sites')
+        setSavingClientSiteId(null)
+        setAlertModal({
+          isOpen: true,
+          type: 'success',
+          title: 'Sucesso',
+          message: 'Cliente vinculado atualizado com sucesso!',
+          buttonText: 'OK'
+        })
+      },
+      onError: (error) => {
+        setSavingClientSiteId(null)
+        setAlertModal({
+          isOpen: true,
+          type: 'error',
+          title: 'Erro',
+          message: error.response?.data?.message || 'Erro ao atualizar cliente vinculado',
+          buttonText: 'OK'
+        })
+      }
+    }
+  )
+
+  // Mutação para criar cliente
+  const createClientMutation = useMutation(
+    async (data) => {
+      const response = await api.post('/clients', data)
+      return response.data
+    },
+    {
+      onSuccess: (data) => {
+        queryClient.invalidateQueries('clients')
+        // Após criar o cliente, vincular automaticamente ao site expandido
+        if (expandedSiteId && data.data?.id) {
+          updateClientConfig(expandedSiteId, data.data.id.toString())
+          // Opcionalmente, salvar automaticamente
+          setTimeout(() => {
+            updateClientMutation.mutate({
+              siteId: expandedSiteId,
+              client_id: data.data.id.toString()
+            })
+          }, 500)
+        }
+        setShowNewClientModal(false)
+        setNewClient({ name: '', email: '', phone: '' })
+        setAlertModal({
+          isOpen: true,
+          type: 'success',
+          title: 'Sucesso',
+          message: 'Cliente criado com sucesso!',
+          buttonText: 'OK'
+        })
+      },
+      onError: (error) => {
+        setAlertModal({
+          isOpen: true,
+          type: 'error',
+          title: 'Erro',
+          message: error.response?.data?.message || 'Erro ao criar cliente',
+          buttonText: 'OK'
+        })
+      }
+    }
+  )
+
   const handleSaveWordfence = (siteId) => {
     const config = wordfenceConfigs[siteId]
     if (!config) return
@@ -184,6 +273,17 @@ const SitesWordfenceConfig = () => {
     })
   }
 
+  const handleSaveClient = (siteId) => {
+    const clientConfig = clientConfigs[siteId]
+    if (!clientConfig) return
+
+    setSavingClientSiteId(siteId)
+    updateClientMutation.mutate({
+      siteId,
+      client_id: clientConfig.client_id || null
+    })
+  }
+
   const toggleExpand = (siteId) => {
     setExpandedSiteId(expandedSiteId === siteId ? null : siteId)
   }
@@ -194,6 +294,15 @@ const SitesWordfenceConfig = () => {
       [siteId]: {
         ...prev[siteId],
         [field]: value
+      }
+    }))
+  }
+
+  const updateClientConfig = (siteId, client_id) => {
+    setClientConfigs(prev => ({
+      ...prev,
+      [siteId]: {
+        client_id: client_id || ''
       }
     }))
   }
@@ -243,10 +352,16 @@ const SitesWordfenceConfig = () => {
                   <h3 style={{ margin: '0 0 5px 0', fontSize: '16px', fontWeight: '600' }}>
                     {site.domain}
                   </h3>
-                  <div style={{ fontSize: '13px', color: '#999', display: 'flex', gap: '15px', alignItems: 'center' }}>
+                  <div style={{ fontSize: '13px', color: '#999', display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
                     <span>Status: <strong style={{ color: site.last_status === 'clean' ? '#10b981' : site.last_status === 'warning' ? '#f59e0b' : '#ef4444' }}>
                       {site.last_status === 'clean' ? 'Verificado' : site.last_status === 'warning' ? 'Verificar' : site.last_status === 'infected' ? 'Infectado' : 'Desconhecido'}
                     </strong></span>
+                    {site.client && (
+                      <span style={{ color: '#667eea' }}>👤 Cliente: {site.client.name}</span>
+                    )}
+                    {!site.client && (
+                      <span style={{ color: '#999', fontStyle: 'italic' }}>Sem cliente vinculado</span>
+                    )}
                     {site.wordfence_enabled && (
                       <span style={{ color: '#10b981' }}>✓ Wordfence Ativo</span>
                     )}
@@ -276,33 +391,27 @@ const SitesWordfenceConfig = () => {
 
               {isExpanded && (
                 <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                  <div style={{ marginBottom: '20px' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px', cursor: 'pointer' }}>
-                      <input
-                        type="checkbox"
-                        checked={config.wordfence_enabled || false}
-                        onChange={(e) => updateConfig(site.id, 'wordfence_enabled', e.target.checked)}
-                        disabled={isSaving}
-                        style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-                      />
-                      <span style={{ fontWeight: '500' }}>Habilitar Monitoramento Wordfence</span>
-                    </label>
-                    <p style={{ marginLeft: '28px', fontSize: '13px', color: '#999', marginTop: '5px' }}>
-                      Ative o monitoramento Wordfence para este site WordPress. Requer API key do Wordfence.
-                    </p>
-                  </div>
-
-                  {config.wordfence_enabled && (
-                    <div style={{ marginBottom: '20px' }}>
+                  {/* Seção de Cliente Vinculado */}
+                  <div style={{ marginBottom: '30px', paddingBottom: '20px', borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                    <h4 style={{ margin: '0 0 15px 0', fontSize: '14px', fontWeight: '600', color: '#e0e0e0' }}>
+                      Cliente Vinculado
+                    </h4>
+                    <div style={{ marginBottom: '15px' }}>
                       <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
-                        API Key do Wordfence
+                        Cliente
                       </label>
-                      <input
-                        type="password"
-                        placeholder="Cole aqui a API key do Wordfence deste site"
-                        value={config.wordfence_api_key || ''}
-                        onChange={(e) => updateConfig(site.id, 'wordfence_api_key', e.target.value)}
-                        disabled={isSaving}
+                      <select
+                        value={clientConfigs[site.id]?.client_id || ''}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          if (value === 'new') {
+                            setShowNewClientModal(true)
+                            setExpandedSiteId(site.id) // Manter expandido
+                          } else {
+                            updateClientConfig(site.id, value)
+                          }
+                        }}
+                        disabled={savingClientSiteId === site.id}
                         style={{ 
                           width: '100%', 
                           padding: '10px', 
@@ -310,19 +419,99 @@ const SitesWordfenceConfig = () => {
                           border: '1px solid rgba(255, 255, 255, 0.2)', 
                           borderRadius: '6px', 
                           color: '#e0e0e0', 
-                          fontSize: '14px' 
+                          fontSize: '14px',
+                          cursor: 'pointer'
                         }}
-                      />
+                      >
+                        <option value="">Nenhum cliente</option>
+                        {clientsData && clientsData.map(client => (
+                          <option key={client.id} value={client.id}>
+                            {client.name} {client.email && `(${client.email.split(',')[0]})`}
+                          </option>
+                        ))}
+                        <option value="new" style={{ fontWeight: 'bold', color: '#667eea' }}>
+                          + Novo Cliente
+                        </option>
+                      </select>
                       <p style={{ marginTop: '8px', fontSize: '12px', color: '#999' }}>
-                        Obtenha a API key no painel do Wordfence do site: Wordfence → Tools → Import/Export
+                        Selecione o cliente que receberá os relatórios deste site. Você pode criar um novo cliente se necessário.
                       </p>
                     </div>
-                  )}
+                    <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                      <button
+                        onClick={() => handleSaveClient(site.id)}
+                        disabled={savingClientSiteId === site.id}
+                        style={{ 
+                          padding: '8px 16px', 
+                          background: savingClientSiteId === site.id
+                            ? 'rgba(102, 126, 234, 0.5)' 
+                            : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', 
+                          border: 'none', 
+                          borderRadius: '6px', 
+                          color: 'white', 
+                          fontWeight: '600', 
+                          cursor: savingClientSiteId === site.id ? 'not-allowed' : 'pointer', 
+                          fontSize: '13px' 
+                        }}
+                      >
+                        {savingClientSiteId === site.id ? 'Salvando...' : 'Salvar Cliente'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Seção de Configuração Wordfence */}
+                  <div style={{ marginBottom: '20px' }}>
+                    <h4 style={{ margin: '0 0 15px 0', fontSize: '14px', fontWeight: '600', color: '#e0e0e0' }}>
+                      Configuração Wordfence
+                    </h4>
+                    <div style={{ marginBottom: '20px' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px', cursor: 'pointer' }}>
+                        <input
+                          type="checkbox"
+                          checked={config.wordfence_enabled || false}
+                          onChange={(e) => updateConfig(site.id, 'wordfence_enabled', e.target.checked)}
+                          disabled={isSaving}
+                          style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                        />
+                        <span style={{ fontWeight: '500' }}>Habilitar Monitoramento Wordfence</span>
+                      </label>
+                      <p style={{ marginLeft: '28px', fontSize: '13px', color: '#999', marginTop: '5px' }}>
+                        Ative o monitoramento Wordfence para este site WordPress. Requer API key do Wordfence.
+                      </p>
+                    </div>
+
+                    {config.wordfence_enabled && (
+                      <div style={{ marginBottom: '20px' }}>
+                        <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+                          API Key do Wordfence
+                        </label>
+                        <input
+                          type="password"
+                          placeholder="Cole aqui a API key do Wordfence deste site"
+                          value={config.wordfence_api_key || ''}
+                          onChange={(e) => updateConfig(site.id, 'wordfence_api_key', e.target.value)}
+                          disabled={isSaving}
+                          style={{ 
+                            width: '100%', 
+                            padding: '10px', 
+                            background: 'rgba(255, 255, 255, 0.1)', 
+                            border: '1px solid rgba(255, 255, 255, 0.2)', 
+                            borderRadius: '6px', 
+                            color: '#e0e0e0', 
+                            fontSize: '14px' 
+                          }}
+                        />
+                        <p style={{ marginTop: '8px', fontSize: '12px', color: '#999' }}>
+                          Obtenha a API key no painel do Wordfence do site: Wordfence → Tools → Import/Export
+                        </p>
+                      </div>
+                    )}
+                  </div>
 
                   <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '20px' }}>
                     <button
                       onClick={() => setExpandedSiteId(null)}
-                      disabled={isSaving}
+                      disabled={isSaving || savingClientSiteId === site.id}
                       style={{ 
                         padding: '10px 20px', 
                         background: 'rgba(255, 255, 255, 0.1)', 
@@ -334,7 +523,7 @@ const SitesWordfenceConfig = () => {
                         fontSize: '14px' 
                       }}
                     >
-                      Cancelar
+                      Fechar
                     </button>
                     <button
                       onClick={() => handleSaveWordfence(site.id)}
@@ -352,7 +541,7 @@ const SitesWordfenceConfig = () => {
                         fontSize: '14px' 
                       }}
                     >
-                      {isSaving ? 'Salvando...' : 'Salvar Configuração'}
+                      {isSaving ? 'Salvando...' : 'Salvar Wordfence'}
                     </button>
                   </div>
                 </div>
@@ -361,6 +550,101 @@ const SitesWordfenceConfig = () => {
           )
         })}
       </div>
+
+      {/* Modal de Novo Cliente */}
+      {showNewClientModal && (
+        <div className="modal-overlay" onClick={() => setShowNewClientModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+            <div className="modal-header">
+              <h2>Novo Cliente</h2>
+              <button className="modal-close" onClick={() => setShowNewClientModal(false)}>×</button>
+            </div>
+            <div className="modal-body" style={{ padding: '30px' }}>
+              <form onSubmit={(e) => {
+                e.preventDefault()
+                // Validar se há pelo menos um email
+                const emails = newClient.email ? newClient.email.split(',').map(e => e.trim()).filter(e => e) : []
+                if (newClient.name && emails.length > 0) {
+                  createClientMutation.mutate(newClient)
+                }
+              }}>
+                <div className="form-group" style={{ marginBottom: '20px' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', color: '#b0b0b0', fontSize: '13px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Nome *</label>
+                  <input
+                    type="text"
+                    placeholder="Nome do cliente"
+                    value={newClient.name}
+                    onChange={(e) => setNewClient({ ...newClient, name: e.target.value })}
+                    disabled={createClientMutation.isLoading}
+                    required
+                    style={{
+                      width: '100%',
+                      padding: '14px 18px',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      color: '#e0e0e0',
+                      transition: 'all 0.3s ease',
+                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif'
+                    }}
+                  />
+                </div>
+                <div className="form-group" style={{ marginBottom: '20px' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', color: '#b0b0b0', fontSize: '13px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>E-mails *</label>
+                  <EmailChipsInput
+                    value={newClient.email || ''}
+                    onChange={(value) => setNewClient({ ...newClient, email: value })}
+                    placeholder="Digite um email e pressione Enter"
+                    disabled={createClientMutation.isLoading}
+                  />
+                </div>
+                <div className="form-group" style={{ marginBottom: '20px' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', color: '#b0b0b0', fontSize: '13px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Telefone (Opcional)</label>
+                  <input
+                    type="text"
+                    placeholder="(00) 00000-0000"
+                    value={newClient.phone}
+                    onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })}
+                    disabled={createClientMutation.isLoading}
+                    style={{
+                      width: '100%',
+                      padding: '14px 18px',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      color: '#e0e0e0',
+                      transition: 'all 0.3s ease',
+                      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif'
+                    }}
+                  />
+                </div>
+                <div className="form-actions" style={{ marginTop: '30px', display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowNewClientModal(false)
+                      setNewClient({ name: '', email: '', phone: '' })
+                    }}
+                    className="btn btn-secondary"
+                    disabled={createClientMutation.isLoading}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={createClientMutation.isLoading || !newClient.name || !newClient.email || newClient.email.split(',').map(e => e.trim()).filter(e => e).length === 0}
+                  >
+                    {createClientMutation.isLoading ? 'Salvando...' : 'Salvar'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
 
       <AlertModal
         isOpen={alertModal.isOpen}
