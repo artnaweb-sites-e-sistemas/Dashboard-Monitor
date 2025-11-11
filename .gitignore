@@ -9,6 +9,8 @@ frontend/node_modules/
 .env
 backend/.env
 .env.local
+# Mas manter .env.production como exemplo
+!frontend/.env.production.example
 
 # Build files
 dist/

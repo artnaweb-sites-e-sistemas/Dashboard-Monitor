@@ -24,26 +24,32 @@ jobs:
         npm install
         npm run build
     
-    - name: Deploy to cPanel via FTP
+    - name: Deploy Backend to cPanel via FTP
       uses: SamKirkland/FTP-Deploy-Action@4.3.0
       with:
         server: ${{ secrets.CPANEL_FTP_HOST }}
         username: ${{ secrets.CPANEL_FTP_USER }}
         password: ${{ secrets.CPANEL_FTP_PASS }}
-        local-dir: ./
-        server-dir: ${{ secrets.CPANEL_SERVER_DIR }}
+        local-dir: ./backend
+        server-dir: /home/artnaw49/gestao.artnaweb.com.br/backend
         exclude: |
           **/.git*
           **/.git*/**
           **/node_modules/**
-          **/frontend/node_modules/**
-          **/backend/node_modules/**
           **/.env
-          **/backend/.env
-          **/frontend/dist/**
+          **/*.log
           **/.vscode/**
           **/.idea/**
-          **/*.log
-          **/README.md
-          **/.github/**
+    
+    - name: Deploy Frontend Build to cPanel via FTP
+      uses: SamKirkland/FTP-Deploy-Action@4.3.0
+      with:
+        server: ${{ secrets.CPANEL_FTP_HOST }}
+        username: ${{ secrets.CPANEL_FTP_USER }}
+        password: ${{ secrets.CPANEL_FTP_PASS }}
+        local-dir: ./frontend/dist
+        server-dir: /home/artnaw49/gestao.artnaweb.com.br/public_html
+        exclude: |
+          **/.git*
+          **/.git*/**
 
