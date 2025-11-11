@@ -41,3 +41,9 @@ Thumbs.db
 # Backup files
 *.bak
 *.backup
+
+# Deploy files (manter no repositório)
+!.github/
+!deploy.sh
+!deploy.php
+!DEPLOY.md

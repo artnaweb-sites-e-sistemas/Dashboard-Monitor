@@ -1,0 +1,49 @@
+name: Deploy to cPanel
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+    
+    - name: Build Frontend
+      run: |
+        cd frontend
+        npm install
+        npm run build
+    
+    - name: Deploy to cPanel via FTP
+      uses: SamKirkland/FTP-Deploy-Action@4.3.0
+      with:
+        server: ${{ secrets.CPANEL_FTP_HOST }}
+        username: ${{ secrets.CPANEL_FTP_USER }}
+        password: ${{ secrets.CPANEL_FTP_PASS }}
+        local-dir: ./
+        server-dir: ${{ secrets.CPANEL_SERVER_DIR }}
+        exclude: |
+          **/.git*
+          **/.git*/**
+          **/node_modules/**
+          **/frontend/node_modules/**
+          **/backend/node_modules/**
+          **/.env
+          **/backend/.env
+          **/frontend/dist/**
+          **/.vscode/**
+          **/.idea/**
+          **/*.log
+          **/README.md
+          **/.github/**
+
