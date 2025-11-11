@@ -39,55 +39,76 @@ router.post('/site/:id', async (req, res) => {
     // Se email customizado foi fornecido, usar ele; senão usar o email do cliente
     const recipientEmail = email || site.client_email;
 
-    if (!recipientEmail) {
+    if (!recipientEmail || recipientEmail.trim() === '') {
       return res.status(400).json({
         success: false,
         message: 'Email do destinatário não fornecido e cliente não possui email cadastrado'
       });
     }
 
+    // Processar emails (pode ser múltiplos separados por vírgula)
+    const recipientEmails = recipientEmail.split(',').map(e => e.trim()).filter(e => e);
+
     // Se subject e body customizados foram fornecidos, usar eles; senão gerar normalmente
     if (subject && body) {
-      // Enviar relatório com conteúdo customizado
-      const result = await reportService.sendCustomReport({
-        to: recipientEmail,
-        subject: subject,
-        html: body,
-        site: site
-      });
+      // Enviar relatório com conteúdo customizado para todos os emails
+      const results = [];
+      for (const emailAddr of recipientEmails) {
+        const result = await reportService.sendCustomReport({
+          to: emailAddr,
+          subject: subject,
+          html: body,
+          site: site
+        });
+        results.push(result);
 
-      if (result.success) {
-        // Registrar no histórico
-        await db.execute(
-          'INSERT INTO report_history (client_id, site_id, report_type, email_sent, status) VALUES (?, ?, ?, ?, ?)',
-          [site.client_id, site.id, 'manual', recipientEmail, 'sent']
-        );
+        // Registrar no histórico para cada email
+        if (result.success) {
+          await db.execute(
+            'INSERT INTO report_history (client_id, site_id, report_type, email_sent, status) VALUES (?, ?, ?, ?, ?)',
+            [site.client_id, site.id, 'manual', emailAddr, 'sent']
+          );
+        }
+      }
 
+      // Verificar se pelo menos um email foi enviado com sucesso
+      const hasSuccess = results.some(r => r.success);
+      if (hasSuccess) {
         res.json({
           success: true,
-          message: 'Relatório enviado com sucesso',
-          data: result
+          message: `Relatório enviado com sucesso para ${results.filter(r => r.success).length} de ${recipientEmails.length} destinatário(s)`,
+          data: {
+            total: recipientEmails.length,
+            sent: results.filter(r => r.success).length,
+            failed: results.filter(r => !r.success).length
+          }
         });
       } else {
         res.status(500).json({
           success: false,
-          message: result.message || 'Erro ao enviar relatório'
+          message: results[0]?.message || 'Erro ao enviar relatório para todos os destinatários'
         });
       }
+      return;
     } else {
       // Gerar e enviar relatório usando template padrão
+      // O sendSiteReport já envia para todos os emails do cliente
       const result = await reportService.sendSiteReport(site);
 
       if (result.success) {
-        // Registrar no histórico
-        await db.execute(
-          'INSERT INTO report_history (client_id, site_id, report_type, email_sent, status) VALUES (?, ?, ?, ?, ?)',
-          [site.client_id, site.id, 'manual', recipientEmail, 'sent']
-        );
+        // Registrar no histórico para cada email (se disponível no result)
+        const emailsToLog = result.recipients || recipientEmails;
+        for (const emailAddr of emailsToLog) {
+          await db.execute(
+            'INSERT INTO report_history (client_id, site_id, report_type, email_sent, status) VALUES (?, ?, ?, ?, ?)',
+            [site.client_id, site.id, 'manual', emailAddr, 'sent']
+          );
+        }
 
+        const recipientsCount = result.recipientsCount || emailsToLog.length;
         res.json({
           success: true,
-          message: 'Relatório enviado com sucesso',
+          message: `Relatório enviado com sucesso para ${recipientsCount} destinatário(s)`,
           data: result
         });
       } else {
@@ -151,17 +172,23 @@ router.post('/client/:id', async (req, res) => {
     const result = await reportService.sendClientReport(client, sites);
 
     if (result.success) {
-      // Registrar no histórico para cada site
+      // Processar emails do cliente (pode ser múltiplos separados por vírgula)
+      const recipientEmails = result.recipients || (client.email ? client.email.split(',').map(e => e.trim()).filter(e => e) : []);
+
+      // Registrar no histórico para cada site e cada email
       for (const site of sites) {
-        await db.execute(
-          'INSERT INTO report_history (client_id, site_id, report_type, email_sent, status) VALUES (?, ?, ?, ?, ?)',
-          [client.id, site.id, 'manual', client.email, 'sent']
-        );
+        for (const emailAddr of recipientEmails) {
+          await db.execute(
+            'INSERT INTO report_history (client_id, site_id, report_type, email_sent, status) VALUES (?, ?, ?, ?, ?)',
+            [client.id, site.id, 'manual', emailAddr, 'sent']
+          );
+        }
       }
 
+      const recipientsCount = result.recipientsCount || recipientEmails.length;
       res.json({
         success: true,
-        message: `Relatório enviado com sucesso para ${sites.length} site(s)`,
+        message: `Relatório enviado com sucesso para ${recipientsCount} destinatário(s) e ${sites.length} site(s)`,
         data: result
       });
     } else {

@@ -5,6 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faEdit, faTrash } from '@fortawesome/free-solid-svg-icons'
 import api from '../services/api'
 import EmailTemplateEditor from '../components/EmailTemplateEditor'
+import EmailChipsInput from '../components/EmailChipsInput'
 import AlertModal from '../components/AlertModal'
 import './Settings.css'
 
@@ -718,12 +719,12 @@ const Settings = () => {
 
   const handleClientSubmit = (e) => {
     e.preventDefault()
-    if (!clientForm.name || !clientForm.email) {
+    if (!clientForm.name || !clientForm.email || clientForm.email.trim() === '') {
       setAlertModal({
         isOpen: true,
         type: 'warning',
         title: 'Atenção',
-        message: 'Nome e email são obrigatórios',
+        message: 'Nome e pelo menos um email são obrigatórios',
         buttonText: 'OK'
       })
       return
@@ -830,16 +831,15 @@ const Settings = () => {
                   <h2>Notificações por E-mail</h2>
                   <div className="setting-item">
                     <label>
-                      <span className="label-text">E-mail para Alertas</span>
+                      <span className="label-text">E-mails para Alertas</span>
                       <span className="label-description">
-                        E-mail que receberá os alertas quando problemas forem detectados
+                        E-mails que receberão os alertas quando problemas forem detectados. Você pode adicionar múltiplos e-mails.
                       </span>
                     </label>
-                    <input
-                      type="email"
+                    <EmailChipsInput
                       value={settings.alert_email || ''}
-                      onChange={(e) => updateSetting('alert_email', e.target.value)}
-                      placeholder="contato@artnaweb.com.br"
+                      onChange={(value) => updateSetting('alert_email', value)}
+                      placeholder="Digite um email e pressione Enter"
                     />
                   </div>
                 </div>
@@ -1155,7 +1155,7 @@ const Settings = () => {
                   <div style={{ marginBottom: '30px', padding: '20px', background: 'rgba(255, 255, 255, 0.05)', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
                     <h3 style={{ marginTop: '0', marginBottom: '20px' }}>{editingClient ? 'Editar Cliente' : 'Novo Cliente'}</h3>
                     <form onSubmit={handleClientSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                         <div>
                           <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Nome *</label>
                           <input
@@ -1169,15 +1169,15 @@ const Settings = () => {
                           />
                         </div>
                         <div>
-                          <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Email *</label>
-                          <input
-                            type="email"
-                            placeholder="email@exemplo.com"
-                            value={clientForm.email}
-                            onChange={(e) => setClientForm({ ...clientForm, email: e.target.value })}
+                          <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>E-mails *</label>
+                          <span style={{ display: 'block', fontSize: '12px', color: '#b0b0b0', marginBottom: '8px' }}>
+                            E-mails que receberão os relatórios. Você pode adicionar múltiplos e-mails.
+                          </span>
+                          <EmailChipsInput
+                            value={clientForm.email || ''}
+                            onChange={(value) => setClientForm({ ...clientForm, email: value })}
+                            placeholder="Digite um email e pressione Enter"
                             disabled={createClientMutation.isLoading || updateClientMutation.isLoading}
-                            required
-                            style={{ width: '100%', padding: '10px', background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.2)', borderRadius: '6px', color: '#e0e0e0', fontSize: '14px' }}
                           />
                         </div>
                         <div>
@@ -1241,7 +1241,29 @@ const Settings = () => {
                                 onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                               >
                                 <td style={{ padding: '15px', color: '#e0e0e0' }}><strong>{client.name}</strong></td>
-                                <td style={{ padding: '15px', color: '#e0e0e0' }}>{client.email}</td>
+                                <td style={{ padding: '15px', color: '#e0e0e0' }}>
+                                {client.email && client.email.includes(',') ? (
+                                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                                    {client.email.split(',').map((email, idx) => (
+                                      <span 
+                                        key={idx}
+                                        style={{
+                                          display: 'inline-block',
+                                          padding: '4px 8px',
+                                          background: 'rgba(102, 126, 234, 0.2)',
+                                          borderRadius: '4px',
+                                          fontSize: '12px',
+                                          marginRight: '4px'
+                                        }}
+                                      >
+                                        {email.trim()}
+                                      </span>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  client.email
+                                )}
+                              </td>
                                 <td style={{ padding: '15px', color: '#e0e0e0' }}>{client.phone || '-'}</td>
                                 <td style={{ padding: '15px' }}>
                                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>

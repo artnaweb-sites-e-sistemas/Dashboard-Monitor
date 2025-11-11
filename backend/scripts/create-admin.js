@@ -25,7 +25,7 @@ async function createAdmin() {
       console.error('Verifique:');
       console.error('1. MySQL está rodando?');
       console.error('2. As credenciais no .env estão corretas?');
-      console.error('3. O banco artnaweb_monitor existe?');
+      console.error('3. O banco de dados existe? (Verifique DB_NAME no .env)');
       process.exit(1);
     }
     

@@ -44,8 +44,12 @@ Thumbs.db
 *.bak
 *.backup
 
+# FTP Deploy state files
+*.ftp-deploy-sync-state.json
+
+# Plugin ZIP files (não commitar arquivos ZIP)
+*.zip
+!*.zip.example
+
 # Deploy files (manter no repositório)
 !.github/
-!deploy.sh
-!deploy.php
-!DEPLOY.md

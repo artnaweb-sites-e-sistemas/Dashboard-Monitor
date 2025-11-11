@@ -68,25 +68,27 @@ router.post('/', async (req, res) => {
   try {
     const { name, email, phone } = req.body;
 
-    if (!name || !email) {
+    if (!name || !email || email.trim() === '') {
       return res.status(400).json({
         success: false,
-        message: 'Nome e email são obrigatórios'
+        message: 'Nome e pelo menos um email são obrigatórios'
       });
     }
 
-    // Verificar se já existe cliente com o mesmo email
-    const [existing] = await db.execute(
-      'SELECT id FROM clients WHERE email = ?',
-      [email]
-    );
-
-    if (existing.length > 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Já existe um cliente com este email'
-      });
+    // Validar formato dos emails (se houver múltiplos)
+    const emailList = email.split(',').map(e => e.trim()).filter(e => e);
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    for (const emailItem of emailList) {
+      if (!emailRegex.test(emailItem)) {
+        return res.status(400).json({
+          success: false,
+          message: `Email inválido: ${emailItem}`
+        });
+      }
     }
+
+    // Não verificar duplicatas, pois clientes podem ter emails em comum
+    // (vários clientes podem receber relatórios no mesmo email)
 
     const [result] = await db.execute(
       'INSERT INTO clients (name, email, phone) VALUES (?, ?, ?)',
@@ -119,25 +121,27 @@ router.put('/:id', async (req, res) => {
     const { id } = req.params;
     const { name, email, phone } = req.body;
 
-    if (!name || !email) {
+    if (!name || !email || email.trim() === '') {
       return res.status(400).json({
         success: false,
-        message: 'Nome e email são obrigatórios'
+        message: 'Nome e pelo menos um email são obrigatórios'
       });
     }
 
-    // Verificar se já existe outro cliente com o mesmo email
-    const [existing] = await db.execute(
-      'SELECT id FROM clients WHERE email = ? AND id != ?',
-      [email, id]
-    );
-
-    if (existing.length > 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Já existe outro cliente com este email'
-      });
+    // Validar formato dos emails (se houver múltiplos)
+    const emailList = email.split(',').map(e => e.trim()).filter(e => e);
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    for (const emailItem of emailList) {
+      if (!emailRegex.test(emailItem)) {
+        return res.status(400).json({
+          success: false,
+          message: `Email inválido: ${emailItem}`
+        });
+      }
     }
+
+    // Não verificar duplicatas, pois clientes podem ter emails em comum
+    // (vários clientes podem receber relatórios no mesmo email)
 
     await db.execute(
       'UPDATE clients SET name = ?, email = ?, phone = ? WHERE id = ?',

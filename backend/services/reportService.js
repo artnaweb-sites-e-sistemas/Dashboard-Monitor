@@ -11,11 +11,18 @@ const { getProfessionalReportTemplate, formatSiteCardProfessional } = require('.
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: false,
+  secure: false, // false para 587, true para 465
+  requireTLS: true, // Força uso de STARTTLS
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS
-  }
+  },
+  tls: {
+    // Não rejeitar certificados auto-assinados (útil para servidores internos)
+    rejectUnauthorized: false
+  },
+  debug: process.env.NODE_ENV === 'development', // Debug apenas em desenvolvimento
+  logger: process.env.NODE_ENV === 'development'
 });
 
 async function getReportSettings() {
@@ -133,10 +140,25 @@ async function sendSiteReport(site) {
       wordfence_last_scan: site.wordfence_last_scan || null
     });
 
+    // Processar emails (pode ser múltiplos separados por vírgula)
+    const recipientEmails = site.client_email 
+      ? site.client_email.split(',').map(e => e.trim()).filter(e => e)
+      : [];
+
+    if (recipientEmails.length === 0) {
+      return {
+        success: false,
+        message: 'Cliente não possui email cadastrado'
+      };
+    }
+
+    // Usar primeiro email para a variável {{clientEmail}} no template
+    const firstEmail = recipientEmails[0];
+
     // Substituir variáveis no template
     let htmlContent = settings.template
       .replace(/\{\{clientName\}\}/g, site.client_name || 'Cliente')
-      .replace(/\{\{clientEmail\}\}/g, site.client_email || '')
+      .replace(/\{\{clientEmail\}\}/g, firstEmail)
       .replace(/\{\{clientPhone\}\}/g, site.client_phone || '')
       .replace(/\{\{sitesList\}\}/g, sitesListHtml)
       .replace(/\{\{reportDate\}\}/g, new Date().toLocaleString('pt-BR'));
@@ -144,26 +166,42 @@ async function sendSiteReport(site) {
     const subject = settings.subject
       .replace(/\{\{clientName\}\}/g, site.client_name || 'Cliente');
 
-    // Enviar email
+    // Enviar email para todos os destinatários
     const info = await transporter.sendMail({
       from: `"${process.env.SMTP_FROM_NAME || 'ArtnaWEB Monitor'}" <${process.env.SMTP_USER}>`,
-      to: site.client_email,
+      to: recipientEmails.length > 1 ? recipientEmails : recipientEmails[0], // Array se múltiplos, string se único
       subject: subject,
       html: htmlContent,
       text: htmlContent.replace(/<[^>]*>/g, '')
     });
 
-    console.log('Report email sent:', info.messageId);
+    console.log(`[Report] Email enviado para ${recipientEmails.length} destinatário(s):`, recipientEmails.join(', '));
+    console.log('[Report] MessageId:', info.messageId);
     return {
       success: true,
-      messageId: info.messageId
+      messageId: info.messageId,
+      recipientsCount: recipientEmails.length,
+      recipients: recipientEmails
     };
 
   } catch (error) {
     console.error('Report email error:', error);
+    
+    // Mensagens de erro mais amigáveis
+    let errorMessage = 'Erro ao enviar relatório';
+    
+    if (error.code === 'EAUTH' || error.responseCode === 535) {
+      errorMessage = 'Erro de autenticação SMTP: Credenciais de email incorretas. Verifique SMTP_USER e SMTP_PASS no arquivo .env';
+    } else if (error.code === 'ECONNECTION' || error.code === 'ETIMEDOUT') {
+      errorMessage = 'Erro de conexão SMTP: Não foi possível conectar ao servidor de email. Verifique SMTP_HOST e SMTP_PORT';
+    } else if (error.message) {
+      errorMessage = `Erro ao enviar relatório: ${error.message}`;
+    }
+    
     return {
       success: false,
-      message: error.message
+      message: errorMessage,
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     };
   }
 }
@@ -190,10 +228,25 @@ async function sendClientReport(client, sites) {
       });
     }).join('');
 
+    // Processar emails (pode ser múltiplos separados por vírgula)
+    const recipientEmails = client.email 
+      ? client.email.split(',').map(e => e.trim()).filter(e => e)
+      : [];
+
+    if (recipientEmails.length === 0) {
+      return {
+        success: false,
+        message: 'Cliente não possui email cadastrado'
+      };
+    }
+
+    // Usar primeiro email para a variável {{clientEmail}} no template
+    const firstEmail = recipientEmails[0];
+
     // Substituir variáveis no template
     let htmlContent = settings.template
       .replace(/\{\{clientName\}\}/g, client.name || 'Cliente')
-      .replace(/\{\{clientEmail\}\}/g, client.email || '')
+      .replace(/\{\{clientEmail\}\}/g, firstEmail)
       .replace(/\{\{clientPhone\}\}/g, client.phone || '')
       .replace(/\{\{sitesList\}\}/g, sitesListHtml)
       .replace(/\{\{reportDate\}\}/g, new Date().toLocaleString('pt-BR'))
@@ -202,37 +255,64 @@ async function sendClientReport(client, sites) {
     const subject = settings.subject
       .replace(/\{\{clientName\}\}/g, client.name || 'Cliente');
 
-    // Enviar email
+    // Enviar email para todos os destinatários
     const info = await transporter.sendMail({
       from: `"${process.env.SMTP_FROM_NAME || 'ArtnaWEB Monitor'}" <${process.env.SMTP_USER}>`,
-      to: client.email,
+      to: recipientEmails.length > 1 ? recipientEmails : recipientEmails[0], // Array se múltiplos, string se único
       subject: subject,
       html: htmlContent,
       text: htmlContent.replace(/<[^>]*>/g, '')
     });
 
-    console.log('Client report email sent:', info.messageId);
+    console.log(`[Report] Relatório de cliente enviado para ${recipientEmails.length} destinatário(s):`, recipientEmails.join(', '));
+    console.log('[Report] MessageId:', info.messageId);
     return {
       success: true,
       messageId: info.messageId,
-      sitesCount: sites.length
+      sitesCount: sites.length,
+      recipientsCount: recipientEmails.length,
+      recipients: recipientEmails
     };
 
   } catch (error) {
     console.error('Client report email error:', error);
+    
+    // Mensagens de erro mais amigáveis
+    let errorMessage = 'Erro ao enviar relatório';
+    
+    if (error.code === 'EAUTH' || error.responseCode === 535) {
+      errorMessage = 'Erro de autenticação SMTP: Credenciais de email incorretas. Verifique SMTP_USER e SMTP_PASS no arquivo .env';
+    } else if (error.code === 'ECONNECTION' || error.code === 'ETIMEDOUT') {
+      errorMessage = 'Erro de conexão SMTP: Não foi possível conectar ao servidor de email. Verifique SMTP_HOST e SMTP_PORT';
+    } else if (error.message) {
+      errorMessage = `Erro ao enviar relatório: ${error.message}`;
+    }
+    
     return {
       success: false,
-      message: error.message
+      message: errorMessage,
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     };
   }
 }
 
 async function sendCustomReport({ to, subject, html, site }) {
   try {
+    // Processar emails (pode ser string única ou múltiplos separados por vírgula)
+    // Mas neste caso, sempre recebe um único email por chamada
+    const recipientEmail = typeof to === 'string' ? to.trim() : to;
+
+    if (!recipientEmail) {
+      return {
+        success: false,
+        message: 'Nenhum email de destinatário fornecido'
+      };
+    }
+
     // Enviar email com conteúdo customizado
     const info = await transporter.sendMail({
       from: `"${process.env.SMTP_FROM_NAME || 'ArtnaWEB Monitor'}" <${process.env.SMTP_USER}>`,
-      to: to,
+      to: recipientEmail,
       subject: subject,
       html: html,
       text: html.replace(/<[^>]*>/g, '')
@@ -246,9 +326,22 @@ async function sendCustomReport({ to, subject, html, site }) {
 
   } catch (error) {
     console.error('Custom report email error:', error);
+    
+    // Mensagens de erro mais amigáveis
+    let errorMessage = 'Erro ao enviar relatório';
+    
+    if (error.code === 'EAUTH' || error.responseCode === 535) {
+      errorMessage = 'Erro de autenticação SMTP: Credenciais de email incorretas. Verifique SMTP_USER e SMTP_PASS no arquivo .env';
+    } else if (error.code === 'ECONNECTION' || error.code === 'ETIMEDOUT') {
+      errorMessage = 'Erro de conexão SMTP: Não foi possível conectar ao servidor de email. Verifique SMTP_HOST e SMTP_PORT';
+    } else if (error.message) {
+      errorMessage = `Erro ao enviar relatório: ${error.message}`;
+    }
+    
     return {
       success: false,
-      message: error.message
+      message: errorMessage,
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     };
   }
 }

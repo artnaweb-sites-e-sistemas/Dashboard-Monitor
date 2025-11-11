@@ -197,10 +197,23 @@ app.get('/api/health', (req, res) => {
 
 // Error handler
 app.use((err, req, res, next) => {
-  console.error('Error:', err);
+  console.error('='.repeat(50));
+  console.error('❌ ERRO NO SERVIDOR:');
+  console.error('Path:', req.path);
+  console.error('Method:', req.method);
+  console.error('Error:', err.message);
+  console.error('Stack:', err.stack);
+  console.error('='.repeat(50));
+  
+  const isDevelopment = process.env.NODE_ENV !== 'production';
+  
   res.status(err.status || 500).json({
     success: false,
-    message: err.message || 'Internal server error'
+    message: err.message || 'Internal server error',
+    ...(isDevelopment && {
+      stack: err.stack,
+      details: err.toString()
+    })
   });
 });
 

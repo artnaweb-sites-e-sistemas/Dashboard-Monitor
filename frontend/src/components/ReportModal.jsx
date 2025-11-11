@@ -3,6 +3,7 @@ import { useQuery } from 'react-query'
 import api from '../services/api'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faSpinner, faEye, faCode, faExclamationCircle } from '@fortawesome/free-solid-svg-icons'
+import EmailChipsInput from './EmailChipsInput'
 import AlertModal from './AlertModal'
 import './ScanDetailsModal.css'
 import './ReportModal.css'
@@ -300,12 +301,12 @@ ${bodyContent}
   }
 
   const handleSend = async () => {
-    if (!email || !subject || !body) {
+    if (!email || email.trim() === '' || !subject || !body) {
       setAlertModal({
         isOpen: true,
         type: 'warning',
         title: 'Atenção',
-        message: 'Por favor, preencha todos os campos',
+        message: 'Por favor, preencha todos os campos (pelo menos um email é obrigatório)',
         buttonText: 'OK'
       })
       return
@@ -352,18 +353,43 @@ ${bodyContent}
               <div className="report-client-info">
                 <h3>Cliente</h3>
                 <p><strong>Nome:</strong> {siteData.client?.name || 'N/A'}</p>
-                <p><strong>Email:</strong> {siteData.client?.email || 'N/A'}</p>
+                <p>
+                  <strong>E-mails:</strong> {
+                    siteData.client?.email ? (
+                      siteData.client.email.includes(',') ? (
+                        <span style={{ display: 'inline-flex', flexWrap: 'wrap', gap: '4px', alignItems: 'center' }}>
+                          {siteData.client.email.split(',').map((email, idx) => (
+                            <span key={idx} style={{ 
+                              display: 'inline-block', 
+                              padding: '2px 6px', 
+                              background: 'rgba(102, 126, 234, 0.2)', 
+                              borderRadius: '4px', 
+                              fontSize: '12px',
+                              marginRight: '4px'
+                            }}>
+                              {email.trim()}
+                            </span>
+                          ))}
+                        </span>
+                      ) : (
+                        siteData.client.email
+                      )
+                    ) : 'N/A'
+                  }
+                </p>
                 <p><strong>Site:</strong> {siteData.domain}</p>
               </div>
 
               <div className="report-email-form">
                 <div className="form-group">
-                  <label>Email Destinatário</label>
-                  <input
-                    type="email"
+                  <label>E-mails Destinatários</label>
+                  <span style={{ display: 'block', fontSize: '12px', color: '#b0b0b0', marginBottom: '8px' }}>
+                    Você pode adicionar múltiplos e-mails para enviar o relatório
+                  </span>
+                  <EmailChipsInput
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="email@exemplo.com"
+                    onChange={(value) => setEmail(value)}
+                    placeholder="Digite um email e pressione Enter"
                     disabled={isSending}
                   />
                 </div>
@@ -468,7 +494,7 @@ ${bodyContent}
           <button 
             className="btn btn-primary" 
             onClick={handleSend}
-            disabled={isSending || !email || !subject || !body}
+            disabled={isSending || !email || email.trim() === '' || !subject || !body}
           >
             {isSending ? (
               <>

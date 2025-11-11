@@ -13,9 +13,21 @@ async function getEmailSettings() {
       ['alert_email']
     );
     
-    if (settings.length > 0) {
-      return settings[0].setting_value || process.env.SMTP_FROM;
+    if (settings.length > 0 && settings[0].setting_value) {
+      const emailValue = settings[0].setting_value;
+      
+      // Se contém vírgula, é múltiplos emails
+      if (emailValue.includes(',')) {
+        // Retornar array de emails (remover espaços e filtrar vazios)
+        const emails = emailValue.split(',').map(e => e.trim()).filter(e => e);
+        return emails.length > 0 ? emails : process.env.SMTP_FROM;
+      }
+      
+      // Email único
+      return emailValue;
     }
+    
+    // Fallback para email do .env
     return process.env.SMTP_FROM;
   } catch (error) {
     console.error('Error getting email settings:', error);
@@ -63,11 +75,18 @@ async function getEmailSubject() {
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: false, // true para 465, false para outras portas
+  secure: false, // false para 587, true para 465
+  requireTLS: true, // Força uso de STARTTLS
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS
-  }
+  },
+  tls: {
+    // Não rejeitar certificados auto-assinados (útil para servidores internos)
+    rejectUnauthorized: false
+  },
+  debug: process.env.NODE_ENV === 'development', // Debug apenas em desenvolvimento
+  logger: process.env.NODE_ENV === 'development'
 });
 
 /**
