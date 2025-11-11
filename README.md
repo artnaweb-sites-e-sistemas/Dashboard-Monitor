@@ -113,7 +113,7 @@ npm run dev
 
 ## Problemas de Login?
 
-1. Execute `create-admin.bat` para criar/atualizar o usuário admin
+1. Execute `node scripts/create-admin.js` no diretório backend para criar/atualizar o usuário admin
 2. Verifique se o backend está rodando na porta 3001
 3. Verifique se o frontend está rodando na porta 3000
 4. Abra o Console do navegador (F12) para ver erros
@@ -179,12 +179,7 @@ O scan automático está **configurado para executar a cada 1 minuto** por padr�
 Execute o script de teste:
 ```bash
 cd backend
-node scripts/test-auto-scan.js
-```
-
-Ou use o script completo:
-```bash
-verificar-scan-automatico.bat
+node scripts/check-setup.js
 ```
 
 ### Como Funciona
