@@ -66,8 +66,10 @@ jobs:
           **/*.ftp-deploy-sync-state.json
           **/create-env-local.js
           **/test-connection.js
+          **/package-lock.json
           create-env-local.js
           test-connection.js
+          package-lock.json
     
     - name: List Frontend Build Files
       run: |
