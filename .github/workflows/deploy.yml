@@ -32,6 +32,15 @@ jobs:
         ls -la dist/
         ls -la dist/assets/ || echo "Pasta assets não encontrada"
     
+    - name: Remove local development files before deploy
+      run: |
+        cd backend
+        echo "Removendo arquivos de desenvolvimento local..."
+        rm -f create-env-local.js
+        rm -f test-connection.js
+        echo "Arquivos removidos. Listando arquivos restantes:"
+        ls -la | head -20
+    
     - name: Deploy Backend to VPS/cPanel via FTP
       uses: SamKirkland/FTP-Deploy-Action@4.3.0
       with:
@@ -40,17 +49,25 @@ jobs:
         password: ${{ secrets.CPANEL_FTP_PASS }}
         local-dir: ./backend/
         server-dir: backend/
+        log-level: verbose
+        dangerous-clean-slate: false
         exclude: |
           **/.git*
-          **/.git*/**
+          **/.git*/
+          **/node_modules/
           **/node_modules/**
           **/.env
+          **/.env.*
           **/*.log
+          **/.vscode/
           **/.vscode/**
+          **/.idea/
           **/.idea/**
+          **/*.ftp-deploy-sync-state.json
           **/create-env-local.js
           **/test-connection.js
-          **/*.ftp-deploy-sync-state.json
+          create-env-local.js
+          test-connection.js
     
     - name: List Frontend Build Files
       run: |
