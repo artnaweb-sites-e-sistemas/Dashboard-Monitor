@@ -22,44 +22,79 @@ const PORT = process.env.PORT || 3001;
 // Trust proxy para obter IP real (necessário para rate limiting funcionar corretamente)
 app.set('trust proxy', 1);
 
-// Middleware
-// Configurar CORS baseado no ambiente
-const allowedOrigins = process.env.NODE_ENV === 'production'
-  ? [
-      'https://gestao.artnaweb.com.br',
-      'https://www.gestao.artnaweb.com.br',
-      'https://api.gestao.artnaweb.com.br'
-    ]
-  : [
-      'http://localhost:3000',
-      'http://127.0.0.1:3000'
-    ];
+// Configurar CORS
+// SEMPRE permitir origens de produção (independente de NODE_ENV)
+// Isso resolve problemas quando NODE_ENV não está configurado no servidor
+const productionOrigins = [
+  'https://gestao.artnaweb.com.br',
+  'https://www.gestao.artnaweb.com.br',
+  'https://api.gestao.artnaweb.com.br'
+];
 
+// Origens permitidas em desenvolvimento
+const developmentOrigins = [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000'
+];
+
+// SEMPRE permitir ambas as origens (produção + desenvolvimento)
+// Isso garante que funcione mesmo se NODE_ENV não estiver configurado
+const allowedOrigins = [...productionOrigins, ...developmentOrigins];
+
+// Log da configuração ao iniciar
+console.log(`[CORS Config] NODE_ENV: ${process.env.NODE_ENV || 'undefined'}`);
+console.log(`[CORS Config] Origens permitidas: ${allowedOrigins.join(', ')}`);
+
+// Função para verificar se a origin é permitida
+const isOriginAllowed = (origin) => {
+  if (!origin) return true; // Permitir requisições sem origin (ex: Postman, mobile)
+  const isAllowed = allowedOrigins.includes(origin);
+  if (!isAllowed) {
+    console.log(`[CORS] Origin rejeitada: "${origin}"`);
+    console.log(`[CORS] Origens permitidas: ${allowedOrigins.join(', ')}`);
+  }
+  return isAllowed;
+};
+
+// Handler explícito para requisições OPTIONS (preflight) - DEVE vir ANTES do middleware cors
+app.options('*', (req, res) => {
+  const origin = req.headers.origin;
+  
+  console.log(`[CORS OPTIONS] Requisição OPTIONS recebida de: ${origin}`);
+  
+  if (isOriginAllowed(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Max-Age', '86400'); // 24 horas
+    console.log(`[CORS OPTIONS] Preflight permitido para: ${origin}`);
+    return res.sendStatus(200);
+  } else {
+    console.log(`[CORS OPTIONS] Origem NÃO permitida: ${origin}`);
+    console.log(`[CORS OPTIONS] Origens permitidas: ${allowedOrigins.join(', ')}`);
+    return res.status(403).json({ error: 'CORS not allowed' });
+  }
+});
+
+// Configurar CORS com middleware
 app.use(cors({
   origin: function (origin, callback) {
-    // Permitir requisições sem origin (ex: Postman, mobile apps)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    if (isOriginAllowed(origin)) {
       callback(null, true);
     } else {
       console.log(`[CORS] Origem bloqueada: ${origin}`);
+      console.log(`[CORS] Origens permitidas: ${allowedOrigins.join(', ')}`);
+      console.log(`[CORS] NODE_ENV: ${process.env.NODE_ENV || 'undefined'}`);
       callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 200 // Para navegadores legados
 }));
-
-// Handler explícito para requisições OPTIONS (preflight)
-app.options('*', (req, res) => {
-  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.sendStatus(200);
-});
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
