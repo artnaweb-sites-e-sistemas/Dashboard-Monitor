@@ -32,7 +32,7 @@ jobs:
         server: ${{ secrets.CPANEL_FTP_HOST }}
         username: ${{ secrets.CPANEL_FTP_USER }}
         password: ${{ secrets.CPANEL_FTP_PASS }}
-        local-dir: ./backend
+        local-dir: ./backend/
         server-dir: /home/artnaw49/gestao.artnaweb.com.br/backend
         exclude: |
           **/.git*
@@ -49,7 +49,7 @@ jobs:
         server: ${{ secrets.CPANEL_FTP_HOST }}
         username: ${{ secrets.CPANEL_FTP_USER }}
         password: ${{ secrets.CPANEL_FTP_PASS }}
-        local-dir: ./frontend/dist
+        local-dir: ./frontend/dist/
         server-dir: /home/artnaw49/gestao.artnaweb.com.br/public_html
         exclude: |
           **/.git*
@@ -75,7 +75,7 @@ jobs:
         server: ${{ secrets.CPANEL_FTP_HOST }}
         username: ${{ secrets.CPANEL_FTP_USER }}
         password: ${{ secrets.CPANEL_FTP_PASS }}
-        local-dir: ./.htaccess-temp
+        local-dir: ./.htaccess-temp/
         server-dir: /home/artnaw49/gestao.artnaweb.com.br/public_html
         dangerous-clean-slate: false
       continue-on-error: true
