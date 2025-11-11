@@ -48,6 +48,9 @@ jobs:
           **/*.log
           **/.vscode/**
           **/.idea/**
+          **/create-env-local.js
+          **/test-connection.js
+          **/*.ftp-deploy-sync-state.json
     
     - name: List Frontend Build Files
       run: |
