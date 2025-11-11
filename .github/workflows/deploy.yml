@@ -46,6 +46,13 @@ jobs:
           **/.vscode/**
           **/.idea/**
     
+    - name: List Frontend Build Files
+      run: |
+        echo "=== Arquivos em frontend/dist/ ==="
+        ls -la frontend/dist/
+        echo "=== Conteúdo de frontend/dist/assets/ ==="
+        ls -la frontend/dist/assets/ || echo "Pasta assets não existe"
+    
     - name: Deploy Frontend Build to cPanel via FTP
       uses: SamKirkland/FTP-Deploy-Action@4.3.0
       with:
@@ -53,7 +60,7 @@ jobs:
         username: ${{ secrets.CPANEL_FTP_USER }}
         password: ${{ secrets.CPANEL_FTP_PASS }}
         local-dir: ./frontend/dist/
-        server-dir: public_html/
+        server-dir: ./
         dangerous-clean-slate: false
         exclude: |
           **/.git*
@@ -84,7 +91,7 @@ jobs:
         username: ${{ secrets.CPANEL_FTP_USER }}
         password: ${{ secrets.CPANEL_FTP_PASS }}
         local-dir: ./.htaccess-temp/
-        server-dir: public_html/
+        server-dir: ./
         dangerous-clean-slate: false
       continue-on-error: true
 
