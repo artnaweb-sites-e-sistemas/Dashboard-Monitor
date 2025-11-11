@@ -23,9 +23,33 @@ const PORT = process.env.PORT || 3001;
 app.set('trust proxy', 1);
 
 // Middleware
+// Configurar CORS baseado no ambiente
+const allowedOrigins = process.env.NODE_ENV === 'production'
+  ? [
+      'https://gestao.artnaweb.com.br',
+      'https://www.gestao.artnaweb.com.br',
+      'https://api.gestao.artnaweb.com.br'
+    ]
+  : [
+      'http://localhost:3000',
+      'http://127.0.0.1:3000'
+    ];
+
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
-  credentials: true
+  origin: function (origin, callback) {
+    // Permitir requisições sem origin (ex: Postman, mobile apps)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.log(`[CORS] Origem bloqueada: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
