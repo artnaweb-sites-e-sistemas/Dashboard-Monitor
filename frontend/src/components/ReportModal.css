@@ -1,0 +1,191 @@
+/* ReportModal usa as mesmas classes base do ScanDetailsModal */
+/* Estilos específicos do ReportModal - o modal-overlay e modal-content vêm do ScanDetailsModal.css */
+
+/* Garantir que o modal apareça centralizado corretamente */
+.modal-overlay {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 1000 !important;
+}
+
+.modal-content.report-modal {
+  max-width: 900px !important;
+  width: calc(100% - 40px) !important;
+  max-width: min(900px, calc(100vw - 40px)) !important;
+  margin: 0 !important;
+  position: relative !important;
+}
+
+.report-client-info {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.report-client-info h3 {
+  margin: 0 0 10px 0;
+  color: #e0e0e0;
+  font-size: 16px;
+}
+
+.report-client-info p {
+  margin: 5px 0;
+  color: #b0b0b0;
+}
+
+.report-client-info strong {
+  color: #e0e0e0;
+  margin-right: 8px;
+}
+
+.report-email-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.report-email-form .form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.report-email-form label {
+  font-weight: 600;
+  margin-bottom: 5px;
+  color: #e0e0e0;
+}
+
+.report-email-form input,
+.report-email-form textarea {
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: inherit;
+  background: rgba(255, 255, 255, 0.05);
+  color: #e0e0e0;
+}
+
+.report-email-form input:focus,
+.report-email-form textarea:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.email-body-editor {
+  font-family: 'Courier New', monospace;
+  resize: vertical;
+  min-height: 200px;
+}
+
+.email-preview {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  padding: 15px;
+  background: white;
+  min-height: 200px;
+  max-height: 400px;
+  overflow-y: auto;
+  color: #333;
+}
+
+.email-preview * {
+  max-width: 100%;
+  color: inherit;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-footer .btn {
+  min-width: 120px;
+}
+
+/* Editor Tabs */
+.editor-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.editor-tab {
+  background: transparent;
+  border: none;
+  padding: 10px 20px;
+  color: #b0b0b0;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.editor-tab:hover:not(:disabled) {
+  color: #e0e0e0;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.editor-tab.active {
+  color: #667eea;
+  border-bottom-color: #667eea;
+}
+
+.editor-tab:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Editor Visual Container */
+.editor-visual-container {
+  position: relative;
+  width: 100%;
+  min-height: 500px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  overflow: hidden;
+  background: white;
+}
+
+.editor-visual-iframe {
+  width: 100%;
+  min-height: 500px;
+  border: none;
+  background: white;
+  display: block;
+}
+
+/* Editor HTML Container */
+.editor-html-container {
+  position: relative;
+  width: 100%;
+}
+
+.editor-html-container textarea {
+  font-family: 'Monaco', 'Courier New', 'Consolas', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  tab-size: 2;
+  white-space: pre;
+  overflow-wrap: normal;
+  overflow-x: auto;
+}
+
