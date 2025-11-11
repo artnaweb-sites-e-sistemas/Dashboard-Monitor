@@ -59,11 +59,11 @@ jobs:
           **/.git*
           **/.git*/**
           **/.ftp-deploy-sync-state.json
+          **/.htaccess
     
-    - name: Create .htaccess for Frontend
+    - name: Create and Deploy .htaccess for Frontend
       run: |
-        mkdir -p .htaccess-temp
-        cat > .htaccess-temp/.htaccess << 'EOF'
+        cat > .htaccess-content << 'EOF'
         <IfModule mod_rewrite.c>
           RewriteEngine On
           RewriteBase /
@@ -73,6 +73,9 @@ jobs:
           RewriteRule . /index.html [L]
         </IfModule>
         EOF
+        # Criar pasta temporária e copiar .htaccess
+        mkdir -p .htaccess-temp
+        cp .htaccess-content .htaccess-temp/.htaccess
     
     - name: Deploy .htaccess to Frontend
       uses: SamKirkland/FTP-Deploy-Action@4.3.0
