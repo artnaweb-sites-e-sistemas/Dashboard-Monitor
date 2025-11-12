@@ -929,3 +929,30 @@
   font-weight: 600;
   color: inherit;
 }
+
+/* WordPress Admin Link */
+.wordpress-admin-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  margin-top: 4px;
+}
+
+.wordpress-admin-link:hover {
+  background: rgba(33, 117, 155, 0.1);
+  opacity: 1 !important;
+}
+
+.wordpress-admin-link:hover svg {
+  opacity: 1 !important;
+  transform: scale(1.1);
+}
+
+.wordpress-admin-link:active {
+  transform: scale(0.95);
+}

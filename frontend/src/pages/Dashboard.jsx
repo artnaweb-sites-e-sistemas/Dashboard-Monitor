@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import api from '../services/api'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faEnvelope, faTrash, faSpinner, faEdit, faShieldAlt, faPaperPlane, faRedo, faSort, faSortUp, faSortDown, faCheckCircle } from '@fortawesome/free-solid-svg-icons'
+import { faWordpress } from '@fortawesome/free-brands-svg-icons'
 import ReportModal from '../components/ReportModal'
 import ConfirmModal from '../components/ConfirmModal'
 import AlertModal from '../components/AlertModal'
@@ -693,17 +694,42 @@ const Dashboard = () => {
                     </td>
                     <td>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <a 
-                          href={site.domain.startsWith('http://') || site.domain.startsWith('https://') 
-                            ? site.domain 
-                            : `https://${site.domain}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="site-domain-link"
-                          title={`Abrir ${site.domain} em nova aba`}
-                        >
-                          <strong>{site.domain}</strong>
-                        </a>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          <a 
+                            href={site.domain.startsWith('http://') || site.domain.startsWith('https://') 
+                              ? site.domain 
+                              : `https://${site.domain}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="site-domain-link"
+                            title={`Abrir ${site.domain} em nova aba`}
+                          >
+                            <strong>{site.domain}</strong>
+                          </a>
+                          <a
+                            href={(() => {
+                              // Remover protocolo (http:// ou https://) do domínio
+                              const cleanDomain = site.domain.replace(/^https?:\/\//, '')
+                              // Adicionar /wp-admin
+                              return `https://${cleanDomain}/wp-admin`
+                            })()}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="wordpress-admin-link"
+                            title="Abrir WordPress Admin em nova aba"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <FontAwesomeIcon 
+                              icon={faWordpress} 
+                              style={{ 
+                                fontSize: '14px', 
+                                color: '#21759b',
+                                opacity: 0.7,
+                                transition: 'all 0.2s ease'
+                              }}
+                            />
+                          </a>
+                        </div>
                         {site.wordfence_enabled && (
                           <span style={{ 
                             fontSize: '10px', 
