@@ -739,6 +739,8 @@ const Settings = () => {
       const response = await api.get('/settings/default-report-template')
       if (response.data.success) {
         updateSetting('report_email_template', response.data.data.template)
+        // Invalidar cache do ReportModal para que ele use o novo template
+        queryClient.invalidateQueries('reportSettings')
         setAlertModal({
           isOpen: true,
           type: 'success',
@@ -777,6 +779,7 @@ const Settings = () => {
       onSuccess: () => {
         setSaveMessage('Configurações salvas com sucesso!')
         queryClient.invalidateQueries('settings')
+        queryClient.invalidateQueries('reportSettings') // Invalidar cache do ReportModal também
         setTimeout(() => setSaveMessage(''), 5000)
       },
       onError: (error) => {

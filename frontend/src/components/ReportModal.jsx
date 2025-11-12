@@ -72,29 +72,48 @@ const ReportModal = ({ siteId, onClose, onSend }) => {
       const response = await api.get('/settings')
       const settings = response.data.data
       
-      // Buscar template padrão do backend se não houver template personalizado
-      let template = settings.report_email_template?.value || settings.report_email_template || ''
+      // Buscar template do banco (pode ser personalizado ou padrão carregado)
+      // A API retorna como { value: '...', type: '...', description: '...' }
+      let template = ''
+      
+      if (settings.report_email_template) {
+        // Pode ser um objeto com .value ou uma string direta
+        template = typeof settings.report_email_template === 'string' 
+          ? settings.report_email_template 
+          : (settings.report_email_template.value || '')
+      }
+      
+      // Se não houver template salvo no banco, buscar template padrão do backend
       if (!template || template.trim() === '') {
         try {
           const defaultTemplateResponse = await api.get('/settings/default-report-template')
           if (defaultTemplateResponse.data.success) {
             template = defaultTemplateResponse.data.data.template
-            console.log('[ReportModal] Template padrão carregado do backend')
+            console.log('[ReportModal] Template padrão carregado do backend (nenhum template salvo no banco)')
           }
         } catch (error) {
           console.error('[ReportModal] Erro ao carregar template padrão:', error)
         }
+      } else {
+        console.log('[ReportModal] Template carregado do banco de dados (configurações)')
       }
       
       // A API retorna um objeto, não um array
+      const subject = settings.report_email_subject 
+        ? (typeof settings.report_email_subject === 'string' 
+            ? settings.report_email_subject 
+            : (settings.report_email_subject.value || ''))
+        : 'Relatório de Monitoramento - {{clientName}}'
+      
       return {
-        subject: settings.report_email_subject?.value || settings.report_email_subject || 'Relatório de Monitoramento - {{clientName}}',
+        subject: subject || 'Relatório de Monitoramento - {{clientName}}',
         template: template
       }
     },
     {
       enabled: !!siteId,
-      staleTime: 60000
+      staleTime: 0, // Sempre buscar do servidor para garantir que está atualizado
+      cacheTime: 0 // Não cachear para sempre ter a versão mais recente
     }
   )
 
