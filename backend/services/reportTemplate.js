@@ -698,25 +698,6 @@ function formatSiteCardProfessional(site, scanDetails, uptimeData) {
           </div>
           <div class="info-description">${blacklistStatus}</div>
         </div>
-        <div class="info-item">
-          <div class="info-label">Certificado SSL</div>
-          <div class="info-value" style="color: ${sslValid ? '#059669' : '#d97706'}">
-            ${sslValid ? 'Ativo' : 'Verificando'}
-          </div>
-          <div class="info-description">
-            ${isClean ? sslStatus : 'Monitoramento ativo do certificado SSL'}
-            ${isClean && sslIssuer ? `<br><small>Emissor: ${sslIssuer}</small>` : ''}
-            ${isClean && sslExpires ? `<br><small>Válido até: ${sslExpires}</small>` : ''}
-            ${isClean && sslDaysUntilExpiry ? `<br><small style="color: ${sslDaysUntilExpiry < 30 ? '#d97706' : '#059669'};">${sslDaysUntilExpiry} dias restantes</small>` : ''}
-          </div>
-        </div>
-        <div class="info-item">
-          <div class="info-label">Headers de Segurança</div>
-          <div class="info-value" style="color: ${securityHeadersCount === securityHeadersTotal ? '#059669' : '#059669'}">
-            ${isClean ? `${securityHeadersCount}/${securityHeadersTotal} Configurados` : 'Monitorando'}
-          </div>
-          <div class="info-description">Proteção de segurança ativa</div>
-        </div>
       </div>
       
       <!-- Informações Técnicas - Só mostrar se status for clean -->
@@ -742,21 +723,6 @@ function formatSiteCardProfessional(site, scanDetails, uptimeData) {
                 <div class="technical-value">${domainInfo.cms}</div>
               </div>
             ` : ''}
-          </div>
-        </div>
-      ` : ''}
-      
-      <!-- Headers de Segurança Detalhados - Só mostrar se status for clean -->
-      ${isClean && securityHeadersList.length > 0 ? `
-        <div class="section-title">Headers de Segurança Configurados</div>
-        <div class="category-section">
-          <div style="display: grid; gap: 10px;">
-            ${securityHeadersList.map(header => `
-              <div style="padding: 10px; background: white; border-radius: 6px; border-left: 3px solid ${header.status === 'clean' ? '#059669' : '#d97706'};">
-                <strong>${header.name}:</strong> 
-                <span style="color: #666; font-size: 13px;">${header.value || 'Não configurado'}</span>
-              </div>
-            `).join('')}
           </div>
         </div>
       ` : ''}

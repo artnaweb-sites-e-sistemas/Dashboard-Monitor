@@ -89,16 +89,6 @@ const EmailTemplateEditor = ({ value, onChange, placeholder = 'Digite o template
               <div class="info-value" style="font-size: 16px; font-weight: 600; color: #059669;">Verificado</div>
               <div class="info-description" style="font-size: 13px; color: #666; margin-top: 5px;">Não listado em blacklists</div>
             </div>
-            <div class="info-item" style="padding: 15px; background: #f8f9fa; border-radius: 6px; border-left: 3px solid #667eea;">
-              <div class="info-label" style="font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Certificado SSL</div>
-              <div class="info-value" style="font-size: 16px; font-weight: 600; color: #059669;">Ativo</div>
-              <div class="info-description" style="font-size: 13px; color: #666; margin-top: 5px;">Certificado SSL válido</div>
-            </div>
-            <div class="info-item" style="padding: 15px; background: #f8f9fa; border-radius: 6px; border-left: 3px solid #667eea;">
-              <div class="info-label" style="font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Headers de Segurança</div>
-              <div class="info-value" style="font-size: 16px; font-weight: 600; color: #059669;">5/5 Configurados</div>
-              <div class="info-description" style="font-size: 13px; color: #666; margin-top: 5px;">Proteção de segurança ativa</div>
-            </div>
           </div>
         </div>
       `.trim()
