@@ -124,20 +124,7 @@ const Dashboard = () => {
     {
       onSuccess: (data) => {
         queryClient.invalidateQueries('sites')
-        // Mostrar mensagem de sucesso com status
-        const statusText = {
-          'clean': 'Verificado',
-          'warning': 'Verificar',
-          'infected': 'Infectado',
-          'unknown': 'Desconhecido'
-        }[data.data?.status] || 'Processado'
-        setAlertModal({
-          isOpen: true,
-          type: 'success',
-          title: 'Sucesso',
-          message: `Site escaneado com sucesso!\n\nStatus: ${statusText}\n\nO resultado foi atualizado na tabela.`,
-          buttonText: 'OK'
-        })
+        // Atualização silenciosa - o resultado aparece automaticamente na tabela
       },
       onError: (error) => {
         setAlertModal({
@@ -230,13 +217,7 @@ const Dashboard = () => {
     {
       onSuccess: () => {
         queryClient.invalidateQueries('sites')
-        setAlertModal({
-          isOpen: true,
-          type: 'success',
-          title: 'Sucesso',
-          message: 'Monitor criado no UptimeRobot com sucesso!',
-          buttonText: 'OK'
-        })
+        // Atualização silenciosa - o status é atualizado automaticamente na tabela
       },
       onError: (error) => {
         setAlertModal({
@@ -276,19 +257,8 @@ const Dashboard = () => {
   }
 
   const handleScan = (id) => {
-    setConfirmModal({
-      isOpen: true,
-      type: 'warning',
-      title: 'Escanear Site',
-      message: 'Deseja escanear este site? Isso pode levar alguns segundos.',
-      confirmText: 'Escanear',
-      cancelText: 'Cancelar',
-      onConfirm: () => {
-        setConfirmModal({ ...confirmModal, isOpen: false })
-        setScanningSiteId(id)
-        scanMutation.mutate(id)
-      }
-    })
+    setScanningSiteId(id)
+    scanMutation.mutate(id)
   }
 
 
@@ -309,19 +279,8 @@ const Dashboard = () => {
 
 
     const handleCreateMonitor = (siteId) => {
-      setConfirmModal({
-        isOpen: true,
-        type: 'info',
-        title: 'Criar Monitor UptimeRobot',
-        message: 'Deseja criar um monitor no UptimeRobot para este site?',
-        confirmText: 'Criar',
-        cancelText: 'Cancelar',
-        onConfirm: () => {
-          setConfirmModal({ ...confirmModal, isOpen: false })
-          setCreatingMonitorId(siteId)
-          createMonitorMutation.mutate(siteId)
-        }
-      })
+      setCreatingMonitorId(siteId)
+      createMonitorMutation.mutate(siteId)
     }
 
 
