@@ -704,7 +704,10 @@ const Dashboard = () => {
                             className="site-domain-link"
                             title={`Abrir ${site.domain} em nova aba`}
                           >
-                            <strong>{site.domain}</strong>
+                            <strong>{(() => {
+                              // Remover protocolo (http:// ou https://) do texto exibido
+                              return site.domain.replace(/^https?:\/\//, '')
+                            })()}</strong>
                           </a>
                           <a
                             href={(() => {
