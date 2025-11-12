@@ -1,0 +1,37 @@
+[Unit]
+Description=ArtnaWEB Monitor Backend API
+After=network.target mysql.service
+Wants=mysql.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/home/artnaw49/gestao.artnaweb.com.br/backend
+Environment="NODE_ENV=production"
+Environment="PATH=/root/.nvm/versions/node/v16.20.2/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+ExecStart=/root/.nvm/versions/node/v16.20.2/bin/node server.js
+Restart=always
+RestartSec=10
+StandardOutput=append:/home/artnaw49/gestao.artnaweb.com.br/backend/server.log
+StandardError=append:/home/artnaw49/gestao.artnaweb.com.br/backend/server.log
+
+# Limites de Recursos (Proteção contra uso excessivo)
+# Limita uso de memória a 512MB (ajuste conforme necessário)
+MemoryLimit=512M
+# Limita uso de CPU a 50% (ajuste conforme necessário)
+CPUQuota=50%
+# Limita número de processos
+TasksMax=50
+
+# Segurança
+NoNewPrivileges=true
+PrivateTmp=true
+# Não permite escalação de privilégios
+ProtectSystem=strict
+ProtectHome=read-only
+# Protege diretórios do sistema
+ReadWritePaths=/home/artnaw49/gestao.artnaweb.com.br/backend
+
+[Install]
+WantedBy=multi-user.target
+
