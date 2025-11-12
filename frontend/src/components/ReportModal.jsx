@@ -254,7 +254,8 @@ const ReportModal = ({ siteId, onClose, onSend }) => {
       console.log('[ReportModal] Configurações:', settingsData)
       console.log('[ReportModal] SiteCard HTML:', siteCardData.siteCardHtml ? 'Carregado' : 'Não carregado')
       
-      const clientName = siteData.client?.name || 'Cliente'
+      // Pegar apenas o primeiro nome do cliente
+      const clientName = siteData.client?.name ? siteData.client.name.split(' ')[0] : 'Cliente'
       const clientEmail = siteData.client?.email || ''
       const clientPhone = siteData.client?.phone || ''
       const domain = siteData.domain || ''

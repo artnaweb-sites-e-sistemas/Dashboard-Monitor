@@ -544,7 +544,7 @@ const Dashboard = () => {
                   <tr key={site.id}>
                     <td>
                       {site.client ? (
-                        <span className="client-name">{site.client.name}</span>
+                        <span className="client-name">{site.client.name.split(' ')[0]}</span>
                       ) : (
                         <span className="text-muted">-</span>
                       )}

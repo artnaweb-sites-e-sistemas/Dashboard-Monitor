@@ -155,16 +155,19 @@ async function sendSiteReport(site) {
     // Usar primeiro email para a variável {{clientEmail}} no template
     const firstEmail = recipientEmails[0];
 
+    // Pegar apenas o primeiro nome do cliente
+    const firstName = site.client_name ? site.client_name.split(' ')[0] : 'Cliente';
+
     // Substituir variáveis no template
     let htmlContent = settings.template
-      .replace(/\{\{clientName\}\}/g, site.client_name || 'Cliente')
+      .replace(/\{\{clientName\}\}/g, firstName)
       .replace(/\{\{clientEmail\}\}/g, firstEmail)
       .replace(/\{\{clientPhone\}\}/g, site.client_phone || '')
       .replace(/\{\{sitesList\}\}/g, sitesListHtml)
       .replace(/\{\{reportDate\}\}/g, new Date().toLocaleString('pt-BR'));
 
     const subject = settings.subject
-      .replace(/\{\{clientName\}\}/g, site.client_name || 'Cliente');
+      .replace(/\{\{clientName\}\}/g, firstName);
 
     // Enviar email para todos os destinatários
     const info = await transporter.sendMail({
@@ -243,9 +246,12 @@ async function sendClientReport(client, sites) {
     // Usar primeiro email para a variável {{clientEmail}} no template
     const firstEmail = recipientEmails[0];
 
+    // Pegar apenas o primeiro nome do cliente
+    const firstName = client.name ? client.name.split(' ')[0] : 'Cliente';
+
     // Substituir variáveis no template
     let htmlContent = settings.template
-      .replace(/\{\{clientName\}\}/g, client.name || 'Cliente')
+      .replace(/\{\{clientName\}\}/g, firstName)
       .replace(/\{\{clientEmail\}\}/g, firstEmail)
       .replace(/\{\{clientPhone\}\}/g, client.phone || '')
       .replace(/\{\{sitesList\}\}/g, sitesListHtml)
@@ -253,7 +259,7 @@ async function sendClientReport(client, sites) {
       .replace(/\{\{totalSites\}\}/g, sites.length.toString());
 
     const subject = settings.subject
-      .replace(/\{\{clientName\}\}/g, client.name || 'Cliente');
+      .replace(/\{\{clientName\}\}/g, firstName);
 
     // Enviar email para todos os destinatários
     const info = await transporter.sendMail({
