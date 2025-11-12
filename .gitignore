@@ -50,6 +50,8 @@ Thumbs.db
 # Plugin ZIP files (não commitar arquivos ZIP)
 *.zip
 !*.zip.example
+# Permitir plugin na pasta plugins/ (necessário para download)
+!plugins/artnaweb-monitor-plugin.zip
 
 # Deploy files (manter no repositório)
 !.github/

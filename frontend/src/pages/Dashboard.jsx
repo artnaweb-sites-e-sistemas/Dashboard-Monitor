@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import api from '../services/api'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faEnvelope, faTrash, faSpinner, faEdit, faShieldAlt, faPaperPlane, faRedo } from '@fortawesome/free-solid-svg-icons'
+import { faEnvelope, faTrash, faSpinner, faEdit, faShieldAlt, faPaperPlane, faRedo, faSort, faSortUp, faSortDown, faCheckCircle } from '@fortawesome/free-solid-svg-icons'
 import ReportModal from '../components/ReportModal'
 import ConfirmModal from '../components/ConfirmModal'
 import AlertModal from '../components/AlertModal'
@@ -45,6 +45,8 @@ const Dashboard = () => {
     buttonText: 'OK'
   })
   const [activeFilter, setActiveFilter] = useState(null) // null, 'total', 'clean', 'warning', 'infected'
+  const [sortColumn, setSortColumn] = useState(null) // null, 'client', 'site', 'status', 'uptime', 'last_scan', 'last_report_date'
+  const [sortDirection, setSortDirection] = useState('asc') // 'asc' ou 'desc'
 
   // Buscar sites - atualizar automaticamente a cada 30 segundos para refletir mudanças de uptime
   const { data: sitesData, isLoading } = useQuery('sites', async () => {
@@ -330,6 +332,28 @@ const Dashboard = () => {
     return <span className={`status-icon ${status}`}></span>
   }
   
+  // Formatar data com mês abreviado e hora: "11/nov - 23h02"
+  const formatDateWithTime = (dateString) => {
+    if (!dateString) return '-'
+    const date = new Date(dateString)
+    const months = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
+    const day = date.getDate().toString().padStart(2, '0')
+    const month = months[date.getMonth()]
+    const hours = date.getHours().toString().padStart(2, '0')
+    const minutes = date.getMinutes().toString().padStart(2, '0')
+    return `${day}/${month} - ${hours}h${minutes}`
+  }
+
+  // Formatar data apenas com mês abreviado: "11/nov"
+  const formatDateShort = (dateString) => {
+    if (!dateString) return '-'
+    const date = new Date(dateString)
+    const months = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
+    const day = date.getDate().toString().padStart(2, '0')
+    const month = months[date.getMonth()]
+    return `${day}/${month}`
+  }
+
   const formatDate = (dateString) => {
     if (!dateString) return '-'
     const date = new Date(dateString)
@@ -377,6 +401,82 @@ const Dashboard = () => {
       // Aplica o novo filtro
       setActiveFilter(filterType)
     }
+  }
+
+  // Handler para ordenar colunas
+  const handleSort = (column) => {
+    if (sortColumn === column) {
+      // Se clicar na mesma coluna, inverte a direção
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      // Nova coluna, começa com ascendente
+      setSortColumn(column)
+      setSortDirection('asc')
+    }
+  }
+
+  // Função para obter o ícone de ordenação
+  const getSortIcon = (column) => {
+    if (sortColumn !== column) {
+      return <FontAwesomeIcon icon={faSort} style={{ opacity: 0.4, marginLeft: '8px', fontSize: '12px' }} />
+    }
+    return sortDirection === 'asc' 
+      ? <FontAwesomeIcon icon={faSortUp} style={{ marginLeft: '8px', fontSize: '12px', color: '#667eea' }} />
+      : <FontAwesomeIcon icon={faSortDown} style={{ marginLeft: '8px', fontSize: '12px', color: '#667eea' }} />
+  }
+
+  // Função para ordenar os dados
+  const sortSites = (sites) => {
+    if (!sortColumn || !sites) return sites
+
+    const sorted = [...sites].sort((a, b) => {
+      let aValue, bValue
+
+      switch (sortColumn) {
+        case 'client':
+          aValue = a.client?.name?.split(' ')[0] || ''
+          bValue = b.client?.name?.split(' ')[0] || ''
+          break
+        case 'site':
+          aValue = a.domain || ''
+          bValue = b.domain || ''
+          break
+        case 'status':
+          // Ordenar por prioridade: clean (1), warning (2), infected (3), unknown (4)
+          const statusPriority = { 'clean': 1, 'warning': 2, 'infected': 3, 'unknown': 4 }
+          aValue = statusPriority[a.last_status] || 5
+          bValue = statusPriority[b.last_status] || 5
+          break
+        case 'uptime':
+          aValue = a.uptime_uptime_ratio !== null ? parseFloat(a.uptime_uptime_ratio) : -1
+          bValue = b.uptime_uptime_ratio !== null ? parseFloat(b.uptime_uptime_ratio) : -1
+          break
+        case 'last_scan':
+          aValue = a.last_scan ? new Date(a.last_scan).getTime() : -1
+          bValue = b.last_scan ? new Date(b.last_scan).getTime() : -1
+          break
+        case 'last_report_date':
+          aValue = a.last_report_date ? new Date(a.last_report_date).getTime() : -1
+          bValue = b.last_report_date ? new Date(b.last_report_date).getTime() : -1
+          break
+        default:
+          return 0
+      }
+
+      // Comparação
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        // Comparação de strings (case-insensitive)
+        const comparison = aValue.toLowerCase().localeCompare(bValue.toLowerCase(), 'pt-BR')
+        return sortDirection === 'asc' ? comparison : -comparison
+      } else {
+        // Comparação numérica
+        if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1
+        if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1
+        return 0
+      }
+    })
+
+    return sorted
   }
 
   return (
@@ -530,17 +630,53 @@ const Dashboard = () => {
             <table className="sites-table">
               <thead>
                 <tr>
-                  <th>Cliente</th>
-                  <th>Site</th>
-                  <th>Status Segurança</th>
-                  <th>Uptime</th>
-                  <th>Última Varredura</th>
-                  <th>Último Relatório Enviado</th>
+                  <th 
+                    onClick={() => handleSort('client')}
+                    className="sortable-header"
+                    title="Clique para ordenar"
+                  >
+                    Cliente {getSortIcon('client')}
+                  </th>
+                  <th 
+                    onClick={() => handleSort('site')}
+                    className="sortable-header"
+                    title="Clique para ordenar"
+                  >
+                    Site {getSortIcon('site')}
+                  </th>
+                  <th 
+                    onClick={() => handleSort('status')}
+                    className="sortable-header"
+                    title="Clique para ordenar"
+                  >
+                    Status {getSortIcon('status')}
+                  </th>
+                  <th 
+                    onClick={() => handleSort('uptime')}
+                    className="sortable-header"
+                    title="Clique para ordenar"
+                  >
+                    Uptime {getSortIcon('uptime')}
+                  </th>
+                  <th 
+                    onClick={() => handleSort('last_scan')}
+                    className="sortable-header"
+                    title="Clique para ordenar"
+                  >
+                    Última Varredura {getSortIcon('last_scan')}
+                  </th>
+                  <th 
+                    onClick={() => handleSort('last_report_date')}
+                    className="sortable-header"
+                    title="Clique para ordenar"
+                  >
+                    Relatório Enviado {getSortIcon('last_report_date')}
+                  </th>
                   <th>Ações</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredSites.map((site) => (
+                {sortSites(filteredSites).map((site) => (
                   <tr key={site.id}>
                     <td>
                       {site.client ? (
@@ -550,17 +686,34 @@ const Dashboard = () => {
                       )}
                     </td>
                     <td>
-                      <a 
-                        href={site.domain.startsWith('http://') || site.domain.startsWith('https://') 
-                          ? site.domain 
-                          : `https://${site.domain}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="site-domain-link"
-                        title={`Abrir ${site.domain} em nova aba`}
-                      >
-                        <strong>{site.domain}</strong>
-                      </a>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <a 
+                          href={site.domain.startsWith('http://') || site.domain.startsWith('https://') 
+                            ? site.domain 
+                            : `https://${site.domain}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="site-domain-link"
+                          title={`Abrir ${site.domain} em nova aba`}
+                        >
+                          <strong>{site.domain}</strong>
+                        </a>
+                        {site.wordfence_enabled && (
+                          <span style={{ 
+                            fontSize: '10px', 
+                            color: '#10b981', 
+                            opacity: 0.65,
+                            fontWeight: '400',
+                            fontStyle: 'italic',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}>
+                            <FontAwesomeIcon icon={faCheckCircle} style={{ fontSize: '10px' }} />
+                            WF Ativo
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td>
                       <span 
@@ -605,22 +758,15 @@ const Dashboard = () => {
                     </td>
                     <td>
                       {site.last_scan ? (
-                        formatDate(site.last_scan)
+                        formatDateWithTime(site.last_scan)
                       ) : (
                         <span className="text-muted">-</span>
                       )}
                     </td>
                     <td>
                       {site.last_report_date ? (
-                        <span 
-                          className="badge badge-report-date" 
-                          title={`Último relatório enviado em ${new Date(site.last_report_date).toLocaleString('pt-BR')}`}
-                        >
-                          {new Date(site.last_report_date).toLocaleDateString('pt-BR', {
-                            day: '2-digit',
-                            month: '2-digit',
-                            year: '2-digit'
-                          })}
+                        <span style={{ color: '#e0e0e0' }}>
+                          {formatDateShort(site.last_report_date)}
                         </span>
                       ) : (
                         <span className="text-muted" style={{ fontSize: '12px' }}>-</span>

@@ -7,6 +7,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
+const path = require('path');
 
 const authRoutes = require('./routes/auth');
 const sitesRoutes = require('./routes/sites');
@@ -189,6 +190,48 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/clients', clientsRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/uptimerobot', uptimerobotRoutes);
+
+// Rota para download do plugin WordPress
+app.get('/api/plugin/download', (req, res) => {
+  try {
+    const fs = require('fs');
+    
+    // Tentar primeiro na pasta plugins/ (organizado)
+    let pluginPath = path.join(__dirname, '..', 'plugins', 'artnaweb-monitor-plugin.zip');
+    
+    // Se não existir, tentar na raiz (compatibilidade)
+    if (!fs.existsSync(pluginPath)) {
+      pluginPath = path.join(__dirname, '..', 'Plugin Artnaweb Monitor.zip');
+    }
+    
+    // Verificar se o arquivo existe
+    if (!fs.existsSync(pluginPath)) {
+      console.error('Plugin não encontrado em:', pluginPath);
+      return res.status(404).json({
+        success: false,
+        message: 'Arquivo do plugin não encontrado'
+      });
+    }
+    
+    res.download(pluginPath, 'artnaweb-monitor-plugin.zip', (err) => {
+      if (err) {
+        console.error('Erro ao fazer download do plugin:', err);
+        if (!res.headersSent) {
+          res.status(500).json({
+            success: false,
+            message: 'Erro ao fazer download do plugin'
+          });
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Erro ao servir plugin:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao fazer download do plugin'
+    });
+  }
+});
 
 // Health check
 app.get('/api/health', (req, res) => {

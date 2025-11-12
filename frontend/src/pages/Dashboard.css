@@ -500,6 +500,23 @@
   border-bottom: 2px solid rgba(255, 255, 255, 0.1);
 }
 
+.sites-table th.sortable-header {
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+  position: relative;
+  padding-right: 35px;
+}
+
+.sites-table th.sortable-header:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #667eea;
+}
+
+.sites-table th.sortable-header:active {
+  background: rgba(255, 255, 255, 0.1);
+}
+
 .sites-table td {
   padding: 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);

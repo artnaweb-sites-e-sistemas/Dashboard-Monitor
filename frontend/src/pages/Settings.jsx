@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from 'react-query'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faEdit, faTrash } from '@fortawesome/free-solid-svg-icons'
+import { faEdit, faTrash, faDownload } from '@fortawesome/free-solid-svg-icons'
 import api from '../services/api'
 import EmailTemplateEditor from '../components/EmailTemplateEditor'
 import EmailChipsInput from '../components/EmailChipsInput'
@@ -1071,7 +1071,47 @@ const Settings = () => {
                       </div>
                     </label>
                   </div>
+                </div>
 
+                <div className="settings-section">
+                  <h2>Plugin WordPress</h2>
+                  <div className="setting-item">
+                    <label>
+                      <span className="label-text">Plugin ArtnaWEB Monitor</span>
+                      <span className="label-description">
+                        Baixe o plugin WordPress para conectar seu site ao sistema de monitoramento. 
+                        Após o download, instale o plugin no WordPress e configure a chave de API.
+                      </span>
+                    </label>
+                    <div style={{ marginTop: '15px' }}>
+                      <a
+                        href={(() => {
+                          // Em produção, VITE_API_URL já inclui /api no final
+                          // Em desenvolvimento, usa /api (proxy do Vite)
+                          const isProd = import.meta.env.PROD || window.location.hostname !== 'localhost';
+                          const apiUrl = import.meta.env.VITE_API_URL;
+                          
+                          if (isProd && apiUrl) {
+                            // Produção: VITE_API_URL já é a URL completa com /api
+                            return `${apiUrl}/plugin/download`;
+                          }
+                          // Desenvolvimento: usa /api (proxy)
+                          return '/api/plugin/download';
+                        })()}
+                        download="artnaweb-monitor-plugin.zip"
+                        className="btn btn-primary"
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          textDecoration: 'none'
+                        }}
+                      >
+                        <FontAwesomeIcon icon={faDownload} />
+                        Baixar Plugin WordPress
+                      </a>
+                    </div>
+                  </div>
                 </div>
               </>
             )}
