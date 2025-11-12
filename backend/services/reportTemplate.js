@@ -493,52 +493,6 @@ function formatSiteCardProfessional(site, scanDetails, uptimeData) {
     }
   }
   
-  // SSL Status - detalhes completos
-  let sslStatus = 'Monitorando';
-  let sslValid = false;
-  let sslIssuer = null;
-  let sslExpires = null;
-  let sslDaysUntilExpiry = null;
-  
-  if (scanDetails && scanDetails.categories) {
-    const sslCategory = scanDetails.categories.find(cat => 
-      cat.name === 'Certificado SSL' || cat.name === 'SSL Certificate'
-    );
-    if (sslCategory) {
-      sslStatus = sslCategory.description || 'Monitorando';
-      sslValid = sslCategory.status === 'clean';
-      
-      if (sslCategory.items && sslCategory.items.length > 0) {
-        const statusItem = sslCategory.items.find(item => item.label === 'Status');
-        if (statusItem) {
-          sslStatus = statusItem.value;
-        }
-        
-        const issuerItem = sslCategory.items.find(item => item.label === 'Emissor');
-        if (issuerItem) {
-          sslIssuer = issuerItem.value;
-        }
-        
-        const expiresItem = sslCategory.items.find(item => item.label === 'Validade');
-        if (expiresItem) {
-          sslExpires = expiresItem.value;
-          // Tentar calcular dias até expiração
-          try {
-            const expiryDate = new Date(expiresItem.value);
-            const now = new Date();
-            const diffTime = expiryDate - now;
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            if (diffDays > 0) {
-              sslDaysUntilExpiry = diffDays;
-            }
-          } catch (e) {
-            // Ignorar erro de parsing de data
-          }
-        }
-      }
-    }
-  }
-  
   // Malware e Blacklist - sempre apresentar de forma positiva
   // Se não for clean, ocultar informações preocupantes e mostrar mensagens genéricas
   let malwareStatus = 'Nenhum malware detectado';
@@ -560,24 +514,6 @@ function formatSiteCardProfessional(site, scanDetails, uptimeData) {
     
     if (blacklistCategory && blacklistCategory.status === 'infected') {
       blacklistStatus = 'Monitoramento ativo - verificações em andamento';
-    }
-  }
-  
-  // Headers de segurança - mostrar todos
-  let securityHeadersCount = 0;
-  let securityHeadersTotal = 5;
-  let securityHeadersList = [];
-  if (scanDetails && scanDetails.categories) {
-    const headersCategory = scanDetails.categories.find(cat => 
-      cat.name === 'Headers de Segurança' || cat.name === 'Security Headers'
-    );
-    if (headersCategory && headersCategory.items) {
-      securityHeadersCount = headersCategory.items.filter(item => item.status === 'clean').length;
-      securityHeadersList = headersCategory.items.map(item => ({
-        name: item.label,
-        value: item.value,
-        status: item.status
-      }));
     }
   }
   
