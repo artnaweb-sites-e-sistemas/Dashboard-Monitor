@@ -397,7 +397,7 @@ const SitesWordfenceConfig = () => {
                       Cliente Vinculado
                     </h4>
                     <div style={{ marginBottom: '15px' }}>
-                      <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+                      <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500', color: '#e0e0e0' }}>
                         Cliente
                       </label>
                       <select
@@ -414,26 +414,58 @@ const SitesWordfenceConfig = () => {
                         disabled={savingClientSiteId === site.id}
                         style={{ 
                           width: '100%', 
-                          padding: '10px', 
-                          background: 'rgba(255, 255, 255, 0.1)', 
+                          padding: '12px 14px', 
+                          background: 'rgba(255, 255, 255, 0.05)', 
                           border: '1px solid rgba(255, 255, 255, 0.2)', 
-                          borderRadius: '6px', 
+                          borderRadius: '8px', 
                           color: '#e0e0e0', 
                           fontSize: '14px',
-                          cursor: 'pointer'
+                          cursor: savingClientSiteId === site.id ? 'not-allowed' : 'pointer',
+                          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif',
+                          transition: 'all 0.3s ease',
+                          outline: 'none',
+                          appearance: 'none',
+                          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23e0e0e0' d='M6 9L1 4h10z'/%3E%3C/svg%3E")`,
+                          backgroundRepeat: 'no-repeat',
+                          backgroundPosition: 'right 12px center',
+                          backgroundSize: '12px',
+                          paddingRight: '36px'
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.outline = 'none'
+                          e.target.style.borderColor = '#667eea'
+                          e.target.style.background = 'rgba(255, 255, 255, 0.08)'
+                          e.target.style.boxShadow = '0 0 0 3px rgba(102, 126, 234, 0.1)'
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)'
+                          e.target.style.background = 'rgba(255, 255, 255, 0.05)'
+                          e.target.style.boxShadow = 'none'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (savingClientSiteId !== site.id) {
+                            e.target.style.borderColor = 'rgba(255, 255, 255, 0.3)'
+                            e.target.style.background = 'rgba(255, 255, 255, 0.08)'
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (document.activeElement !== e.target) {
+                            e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)'
+                            e.target.style.background = 'rgba(255, 255, 255, 0.05)'
+                          }
                         }}
                       >
-                        <option value="">Nenhum cliente</option>
+                        <option value="" style={{ background: '#1a1a1a', color: '#999' }}>Nenhum cliente</option>
                         {clientsData && clientsData.map(client => (
-                          <option key={client.id} value={client.id}>
+                          <option key={client.id} value={client.id} style={{ background: '#1a1a1a', color: '#e0e0e0' }}>
                             {client.name} {client.email && `(${client.email.split(',')[0]})`}
                           </option>
                         ))}
-                        <option value="new" style={{ fontWeight: 'bold', color: '#667eea' }}>
+                        <option value="new" style={{ background: '#1a1a1a', fontWeight: '600', color: '#667eea' }}>
                           + Novo Cliente
                         </option>
                       </select>
-                      <p style={{ marginTop: '8px', fontSize: '12px', color: '#999' }}>
+                      <p style={{ marginTop: '8px', fontSize: '12px', color: '#999', lineHeight: '1.5' }}>
                         Selecione o cliente que receberá os relatórios deste site. Você pode criar um novo cliente se necessário.
                       </p>
                     </div>

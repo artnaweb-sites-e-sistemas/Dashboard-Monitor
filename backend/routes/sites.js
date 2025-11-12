@@ -82,6 +82,118 @@ router.get('/', async (req, res) => {
   }
 });
 
+// IMPORTANTE: Rotas específicas (com sufixos) devem vir ANTES de rotas genéricas (/:id)
+// Isso garante que o Express faça o match correto
+
+// Atualizar configuração Wordfence de um site
+router.put('/:id/wordfence', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { wordfence_enabled, wordfence_api_key } = req.body;
+
+    // Verificar se o site existe
+    const [sites] = await db.execute(
+      'SELECT id FROM sites WHERE id = ?',
+      [id]
+    );
+
+    if (sites.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Site não encontrado'
+      });
+    }
+
+    // Atualizar configuração Wordfence
+    await db.execute(
+      `UPDATE sites 
+       SET wordfence_enabled = ?, 
+           wordfence_api_key = ?,
+           updated_at = NOW()
+       WHERE id = ?`,
+      [
+        wordfence_enabled ? 1 : 0,
+        wordfence_api_key || null,
+        id
+      ]
+    );
+
+    res.json({
+      success: true,
+      message: 'Configuração Wordfence atualizada com sucesso'
+    });
+
+  } catch (error) {
+    console.error('Update Wordfence config error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao atualizar configuração Wordfence'
+    });
+  }
+});
+
+// Atualizar cliente vinculado a um site
+router.put('/:id/client', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { client_id } = req.body;
+
+    console.log(`[Sites Route] PUT /:id/client - Site ID: ${id}, Client ID: ${client_id || 'null'}`);
+
+    // Verificar se o site existe
+    const [sites] = await db.execute(
+      'SELECT id FROM sites WHERE id = ?',
+      [id]
+    );
+
+    if (sites.length === 0) {
+      console.log(`[Sites Route] Site ${id} não encontrado`);
+      return res.status(404).json({
+        success: false,
+        message: 'Site não encontrado'
+      });
+    }
+
+    // Se client_id foi fornecido, verificar se existe
+    if (client_id) {
+      const [clients] = await db.execute(
+        'SELECT id FROM clients WHERE id = ?',
+        [client_id]
+      );
+      if (clients.length === 0) {
+        console.log(`[Sites Route] Cliente ${client_id} não encontrado`);
+        return res.status(400).json({
+          success: false,
+          message: 'Cliente não encontrado'
+        });
+      }
+    }
+
+    // Atualizar client_id do site
+    await db.execute(
+      `UPDATE sites 
+       SET client_id = ?,
+           updated_at = NOW()
+       WHERE id = ?`,
+      [client_id || null, id]
+    );
+
+    console.log(`[Sites Route] Cliente ${client_id || 'null'} vinculado ao site ${id} com sucesso`);
+
+    res.json({
+      success: true,
+      message: 'Cliente vinculado atualizado com sucesso'
+    });
+
+  } catch (error) {
+    console.error('[Sites Route] Update site client error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao atualizar cliente vinculado'
+    });
+  }
+});
+
 // Obter detalhes do scan de um site (deve vir antes de /:id)
 router.get('/:id/details', async (req, res) => {
   try {
@@ -285,108 +397,6 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Atualizar configuração Wordfence de um site
-router.put('/:id/wordfence', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { wordfence_enabled, wordfence_api_key } = req.body;
-
-    // Verificar se o site existe
-    const [sites] = await db.execute(
-      'SELECT id FROM sites WHERE id = ?',
-      [id]
-    );
-
-    if (sites.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Site não encontrado'
-      });
-    }
-
-    // Atualizar configuração Wordfence
-    await db.execute(
-      `UPDATE sites 
-       SET wordfence_enabled = ?, 
-           wordfence_api_key = ?,
-           updated_at = NOW()
-       WHERE id = ?`,
-      [
-        wordfence_enabled ? 1 : 0,
-        wordfence_api_key || null,
-        id
-      ]
-    );
-
-    res.json({
-      success: true,
-      message: 'Configuração Wordfence atualizada com sucesso'
-    });
-
-  } catch (error) {
-    console.error('Update Wordfence config error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Erro ao atualizar configuração Wordfence'
-    });
-  }
-});
-
-// Atualizar cliente vinculado a um site
-router.put('/:id/client', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { client_id } = req.body;
-
-    // Verificar se o site existe
-    const [sites] = await db.execute(
-      'SELECT id FROM sites WHERE id = ?',
-      [id]
-    );
-
-    if (sites.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Site não encontrado'
-      });
-    }
-
-    // Se client_id foi fornecido, verificar se existe
-    if (client_id) {
-      const [clients] = await db.execute(
-        'SELECT id FROM clients WHERE id = ?',
-        [client_id]
-      );
-      if (clients.length === 0) {
-        return res.status(400).json({
-          success: false,
-          message: 'Cliente não encontrado'
-        });
-      }
-    }
-
-    // Atualizar client_id do site
-    await db.execute(
-      `UPDATE sites 
-       SET client_id = ?,
-           updated_at = NOW()
-       WHERE id = ?`,
-      [client_id || null, id]
-    );
-
-    res.json({
-      success: true,
-      message: 'Cliente vinculado atualizado com sucesso'
-    });
-
-  } catch (error) {
-    console.error('Update site client error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Erro ao atualizar cliente vinculado'
-    });
-  }
-});
 
 // Remover site
 router.delete('/:id', async (req, res) => {
