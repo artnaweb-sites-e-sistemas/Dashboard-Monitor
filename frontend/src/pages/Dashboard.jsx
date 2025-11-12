@@ -418,11 +418,11 @@ const Dashboard = () => {
   // Função para obter o ícone de ordenação
   const getSortIcon = (column) => {
     if (sortColumn !== column) {
-      return <FontAwesomeIcon icon={faSort} style={{ opacity: 0.4, marginLeft: '8px', fontSize: '12px' }} />
+      return <FontAwesomeIcon icon={faSort} className="sort-icon" style={{ opacity: 0.4 }} />
     }
     return sortDirection === 'asc' 
-      ? <FontAwesomeIcon icon={faSortUp} style={{ marginLeft: '8px', fontSize: '12px', color: '#667eea' }} />
-      : <FontAwesomeIcon icon={faSortDown} style={{ marginLeft: '8px', fontSize: '12px', color: '#667eea' }} />
+      ? <FontAwesomeIcon icon={faSortUp} className="sort-icon sort-icon-active" />
+      : <FontAwesomeIcon icon={faSortDown} className="sort-icon sort-icon-active" />
   }
 
   // Função para ordenar os dados
@@ -635,42 +635,48 @@ const Dashboard = () => {
                     className="sortable-header"
                     title="Clique para ordenar"
                   >
-                    Cliente {getSortIcon('client')}
+                    <span className="sort-header-text">Cliente</span>
+                    {getSortIcon('client')}
                   </th>
                   <th 
                     onClick={() => handleSort('site')}
                     className="sortable-header"
                     title="Clique para ordenar"
                   >
-                    Site {getSortIcon('site')}
+                    <span className="sort-header-text">Site</span>
+                    {getSortIcon('site')}
                   </th>
                   <th 
                     onClick={() => handleSort('status')}
                     className="sortable-header"
                     title="Clique para ordenar"
                   >
-                    Status {getSortIcon('status')}
+                    <span className="sort-header-text">Status</span>
+                    {getSortIcon('status')}
                   </th>
                   <th 
                     onClick={() => handleSort('uptime')}
                     className="sortable-header"
                     title="Clique para ordenar"
                   >
-                    Uptime {getSortIcon('uptime')}
+                    <span className="sort-header-text">Uptime</span>
+                    {getSortIcon('uptime')}
                   </th>
                   <th 
                     onClick={() => handleSort('last_scan')}
                     className="sortable-header"
                     title="Clique para ordenar"
                   >
-                    Última Varredura {getSortIcon('last_scan')}
+                    <span className="sort-header-text">Última Varredura</span>
+                    {getSortIcon('last_scan')}
                   </th>
                   <th 
                     onClick={() => handleSort('last_report_date')}
                     className="sortable-header"
                     title="Clique para ordenar"
                   >
-                    Relatório Enviado {getSortIcon('last_report_date')}
+                    <span className="sort-header-text">Relatório Enviado</span>
+                    {getSortIcon('last_report_date')}
                   </th>
                   <th>Ações</th>
                 </tr>

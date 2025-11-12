@@ -505,7 +505,8 @@
   user-select: none;
   transition: all 0.2s ease;
   position: relative;
-  padding-right: 35px;
+  padding-right: 28px;
+  white-space: nowrap;
 }
 
 .sites-table th.sortable-header:hover {
@@ -515,6 +516,28 @@
 
 .sites-table th.sortable-header:active {
   background: rgba(255, 255, 255, 0.1);
+}
+
+.sites-table th.sortable-header .sort-header-text {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.sites-table th.sortable-header .sort-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 11px;
+  line-height: 1;
+  display: inline-block;
+  pointer-events: none;
+  min-width: 12px;
+}
+
+.sites-table th.sortable-header .sort-icon-active {
+  color: #667eea;
+  opacity: 1;
 }
 
 .sites-table td {

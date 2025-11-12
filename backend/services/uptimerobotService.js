@@ -491,10 +491,11 @@ async function updateSiteUptimeData(siteId, monitor) {
     
     const site = sites[0];
     
-    // IMPORTANTE: Usar last_uptime_status como referência para mudanças
-    // Se last_uptime_status existe, usar ele. Caso contrário, usar uptime_status atual.
-    // Se ambos forem null/unknown, é a primeira verificação e não deve enviar notificação
-    const previousStatus = site.last_uptime_status || site.uptime_status || null;
+    // IMPORTANTE: Usar APENAS last_uptime_status como referência para mudanças
+    // last_uptime_status é atualizado apenas quando há mudança real de status
+    // Se last_uptime_status for null, é a primeira verificação e não deve enviar notificação
+    // NÃO usar uptime_status como fallback, pois ele pode estar desatualizado
+    const previousStatus = site.last_uptime_status || null;
     
     console.log(`[UptimeRobot] Site ${site.domain} (ID: ${siteId}) - Status anterior: ${previousStatus || 'null (primeira vez)'}`);
     console.log(`[UptimeRobot] Monitor status code: ${monitor.status}`);
@@ -599,41 +600,42 @@ async function updateSiteUptimeData(siteId, monitor) {
       responseTime = null;
     }
 
-    // Verificar mudança de status e enviar notificações
-    // Não enviar notificação na primeira verificação (quando não há status anterior válido)
-    // Considerar 'unknown' e 'paused' como estados não válidos para comparação
-    const isValidStatus = (status) => {
-      return status && status !== 'unknown' && status !== 'paused' && status !== null;
+    // Normalizar status para comparação (considerar 'seems_down' como 'down')
+    // Isso garante que 'seems_down' e 'down' sejam tratados como o mesmo estado
+    const normalizeStatus = (status) => {
+      if (!status || status === 'unknown' || status === 'paused') return null;
+      if (status === 'seems_down' || status === 'down') return 'down';
+      if (status === 'up') return 'up';
+      return null;
     };
     
-    const hasValidPreviousStatus = isValidStatus(previousStatus);
-    const hasValidCurrentStatus = isValidStatus(uptimeStatus);
-    const statusChanged = hasValidPreviousStatus && hasValidCurrentStatus && previousStatus !== uptimeStatus;
+    const normalizedPrevious = normalizeStatus(previousStatus);
+    const normalizedCurrent = normalizeStatus(uptimeStatus);
+    
+    // Verificar se houve mudança REAL de status
+    // Só considera mudança se ambos os status forem válidos e diferentes
+    const statusReallyChanged = normalizedPrevious !== null && 
+                                normalizedCurrent !== null && 
+                                normalizedPrevious !== normalizedCurrent;
     
     // Detectar se site caiu (estava online e agora está offline)
-    const wentDown = statusChanged && 
-                     (previousStatus === 'up') && 
-                     (uptimeStatus === 'down' || uptimeStatus === 'seems_down');
+    const wentDown = statusReallyChanged && normalizedPrevious === 'up' && normalizedCurrent === 'down';
     
     // Detectar se site voltou (estava offline e agora está online)
-    const cameBackUp = statusChanged && 
-                       (previousStatus === 'down' || previousStatus === 'seems_down') && 
-                       (uptimeStatus === 'up');
+    const cameBackUp = statusReallyChanged && normalizedPrevious === 'down' && normalizedCurrent === 'up';
     
     console.log(`[UptimeRobot] Análise de mudança:`);
-    console.log(`  - Status anterior válido: ${hasValidPreviousStatus} (${previousStatus})`);
-    console.log(`  - Status atual válido: ${hasValidCurrentStatus} (${uptimeStatus})`);
-    console.log(`  - Status mudou: ${statusChanged}`);
+    console.log(`  - Status anterior: ${previousStatus || 'null'} (normalizado: ${normalizedPrevious || 'null'})`);
+    console.log(`  - Status atual: ${uptimeStatus} (normalizado: ${normalizedCurrent || 'null'})`);
+    console.log(`  - Mudança real detectada: ${statusReallyChanged}`);
     console.log(`  - Site caiu: ${wentDown}`);
     console.log(`  - Site voltou: ${cameBackUp}`);
-
-    // Atualizar site
-    // IMPORTANTE: Salvar o status atual do banco (site.uptime_status) como last_uptime_status
-    // Se site.uptime_status for null (primeira vez), não atualizar last_uptime_status
-    const currentStatusFromDB = site.uptime_status;
     
-    if (currentStatusFromDB) {
-      // Se há status atual, salvá-lo como last_uptime_status antes de atualizar
+    // Atualizar site
+    // IMPORTANTE: Só atualizar last_uptime_status quando houver mudança REAL de status
+    // Isso garante que não enviaremos múltiplos emails enquanto o site permanece no mesmo estado
+    if (statusReallyChanged) {
+      // Houve mudança real: salvar o status anterior como last_uptime_status
       await db.execute(
         `UPDATE sites SET 
          uptimerobot_monitor_id = ?,
@@ -645,7 +647,7 @@ async function updateSiteUptimeData(siteId, monitor) {
          WHERE id = ?`,
         [
           monitor.id.toString(),
-          currentStatusFromDB, // Status anterior (do banco)
+          site.uptime_status || previousStatus, // Status anterior (antes da mudança)
           uptimeStatus, // Novo status
           uptimeRatio,
           responseTime,
@@ -653,7 +655,8 @@ async function updateSiteUptimeData(siteId, monitor) {
         ]
       );
     } else {
-      // Primeira vez - apenas atualizar uptime_status, não last_uptime_status
+      // Não houve mudança real: apenas atualizar uptime_status e dados de monitoramento
+      // NÃO atualizar last_uptime_status (mantém o valor anterior)
       await db.execute(
         `UPDATE sites SET 
          uptimerobot_monitor_id = ?,
@@ -664,7 +667,7 @@ async function updateSiteUptimeData(siteId, monitor) {
          WHERE id = ?`,
         [
           monitor.id.toString(),
-          uptimeStatus, // Novo status (primeira vez)
+          uptimeStatus, // Novo status (mas sem mudança real)
           uptimeRatio,
           responseTime,
           siteId
@@ -696,7 +699,9 @@ async function updateSiteUptimeData(siteId, monitor) {
     }
 
     // Enviar notificações de uptime se houve mudança significativa
-    if (statusChanged && (wentDown || cameBackUp)) {
+    // IMPORTANTE: Só enviar se realmente houve mudança (statusReallyChanged)
+    // Isso garante que não enviaremos múltiplos emails enquanto o site permanece no mesmo estado
+    if (statusReallyChanged && (wentDown || cameBackUp)) {
       try {
         if (wentDown) {
           console.log(`[UptimeRobot] ========================================`);
@@ -745,12 +750,14 @@ async function updateSiteUptimeData(siteId, monitor) {
         // Não falhar a atualização se o email falhar
       }
     } else {
-      if (!statusChanged) {
+      if (!statusReallyChanged) {
         console.log(`[UptimeRobot] Nenhuma mudança de status detectada para ${site.domain}`);
-        console.log(`  - Status anterior: ${previousStatus}`);
-        console.log(`  - Status atual: ${uptimeStatus}`);
-        if (!hasValidPreviousStatus) {
+        console.log(`  - Status anterior: ${previousStatus || 'null'} (normalizado: ${normalizedPrevious || 'null'})`);
+        console.log(`  - Status atual: ${uptimeStatus} (normalizado: ${normalizedCurrent || 'null'})`);
+        if (normalizedPrevious === null) {
           console.log(`  - Nota: Primeira verificação ou status anterior inválido, notificação não será enviada`);
+        } else if (normalizedPrevious === normalizedCurrent) {
+          console.log(`  - Nota: Status permanece o mesmo (${normalizedCurrent}), notificação não será enviada`);
         }
       }
     }
