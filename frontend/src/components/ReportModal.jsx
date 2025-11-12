@@ -2,7 +2,25 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useQuery } from 'react-query'
 import api from '../services/api'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faSpinner, faEye, faCode, faExclamationCircle } from '@fortawesome/free-solid-svg-icons'
+import { 
+  faSpinner, 
+  faEye, 
+  faCode, 
+  faExclamationCircle,
+  faBold,
+  faItalic,
+  faUnderline,
+  faStrikethrough,
+  faAlignLeft,
+  faAlignCenter,
+  faAlignRight,
+  faAlignJustify,
+  faListUl,
+  faListOl,
+  faLink,
+  faPalette,
+  faFill
+} from '@fortawesome/free-solid-svg-icons'
 import EmailChipsInput from './EmailChipsInput'
 import AlertModal from './AlertModal'
 import './ScanDetailsModal.css'
@@ -17,6 +35,15 @@ const ReportModal = ({ siteId, onClose, onSend }) => {
   const iframeRef = useRef(null)
   const htmlEditorRef = useRef(null)
   const isUpdatingIframeRef = useRef(false) // Flag para evitar loops de atualização
+  const [toolbarState, setToolbarState] = useState({
+    bold: false,
+    italic: false,
+    underline: false,
+    strikethrough: false,
+    fontSize: '3',
+    fontColor: '#000000',
+    backgroundColor: '#ffffff'
+  })
   const [alertModal, setAlertModal] = useState({
     isOpen: false,
     type: 'warning',
@@ -83,6 +110,142 @@ const ReportModal = ({ siteId, onClose, onSend }) => {
       staleTime: 30000
     }
   )
+
+  // Obter o documento do iframe
+  const getIframeDoc = () => {
+    if (!iframeRef.current) return null
+    return iframeRef.current.contentDocument || iframeRef.current.contentWindow.document
+  }
+
+  // Obter a janela do iframe
+  const getIframeWindow = () => {
+    if (!iframeRef.current) return null
+    return iframeRef.current.contentWindow
+  }
+
+  // Converter RGB para Hex
+  const rgbToHex = (rgb) => {
+    const result = rgb.match(/\d+/g)
+    if (!result || result.length < 3) return '#000000'
+    return '#' + result.map(x => {
+      const hex = parseInt(x).toString(16)
+      return hex.length === 1 ? '0' + hex : hex
+    }).join('')
+  }
+
+  // Atualizar estado da toolbar baseado na seleção
+  const updateToolbarState = () => {
+    const iframeDoc = getIframeDoc()
+    const iframeWindow = getIframeWindow()
+    if (!iframeDoc || !iframeWindow) return
+    
+    try {
+      // Focar no iframe para poder executar comandos
+      iframeWindow.focus()
+      
+      // Obter valores dos comandos
+      const bold = iframeDoc.queryCommandState('bold')
+      const italic = iframeDoc.queryCommandState('italic')
+      const underline = iframeDoc.queryCommandState('underline')
+      const strikethrough = iframeDoc.queryCommandState('strikeThrough')
+      const fontSize = iframeDoc.queryCommandValue('fontSize') || '3'
+      
+      // Para cores, o execCommand retorna valores em formato RGB ou hex
+      // Precisamos converter para hex se necessário
+      let fontColor = iframeDoc.queryCommandValue('foreColor') || '#000000'
+      let backgroundColor = iframeDoc.queryCommandValue('backColor') || '#ffffff'
+      
+      // Converter RGB para hex se necessário
+      if (fontColor.startsWith('rgb')) {
+        fontColor = rgbToHex(fontColor)
+      } else if (!fontColor.startsWith('#')) {
+        fontColor = '#' + fontColor
+      }
+      
+      if (backgroundColor.startsWith('rgb')) {
+        backgroundColor = rgbToHex(backgroundColor)
+      } else if (!backgroundColor.startsWith('#')) {
+        backgroundColor = '#' + backgroundColor
+      }
+      
+      setToolbarState({
+        bold,
+        italic,
+        underline,
+        strikethrough,
+        fontSize,
+        fontColor,
+        backgroundColor
+      })
+    } catch (error) {
+      // Ignorar erros ao verificar estado
+    }
+  }
+
+  // Executar comando de formatação
+  const executeCommand = (command, value = null) => {
+    const iframeDoc = getIframeDoc()
+    const iframeWindow = getIframeWindow()
+    
+    if (!iframeDoc || !iframeWindow) return
+    
+    // Focar no iframe primeiro
+    iframeWindow.focus()
+    
+    try {
+      if (value !== null) {
+        iframeDoc.execCommand(command, false, value)
+      } else {
+        iframeDoc.execCommand(command, false, null)
+      }
+      
+      // Atualizar estado da toolbar
+      updateToolbarState()
+      
+      // Disparar evento de input para sincronizar
+      if (iframeDoc.body) {
+        const inputEvent = new Event('input', { bubbles: true })
+        iframeDoc.body.dispatchEvent(inputEvent)
+      }
+    } catch (error) {
+      console.error('Erro ao executar comando:', command, error)
+    }
+  }
+
+  // Handler para mudança de cor de texto
+  const handleFontColorChange = (e) => {
+    const color = e.target.value
+    // execCommand precisa da cor sem o #
+    executeCommand('foreColor', color.replace('#', ''))
+    // Atualizar estado manualmente
+    setToolbarState(prev => ({ ...prev, fontColor: color }))
+  }
+
+  // Handler para mudança de cor de fundo
+  const handleBackgroundColorChange = (e) => {
+    const color = e.target.value
+    // execCommand precisa da cor sem o #
+    executeCommand('backColor', color.replace('#', ''))
+    // Atualizar estado manualmente
+    setToolbarState(prev => ({ ...prev, backgroundColor: color }))
+  }
+
+  // Handler para mudança de tamanho da fonte
+  const handleFontSizeChange = (e) => {
+    const size = e.target.value
+    executeCommand('fontSize', size)
+  }
+
+  // Handler para inserir link
+  const handleInsertLink = () => {
+    const iframeDoc = getIframeDoc()
+    if (!iframeDoc) return
+    
+    const url = prompt('Digite a URL do link:')
+    if (url) {
+      executeCommand('createLink', url)
+    }
+  }
 
   // Gerar preview do email quando os dados estiverem disponíveis
   useEffect(() => {
@@ -277,6 +440,15 @@ ${bodyContent}
               iframeDoc.body.addEventListener('input', handleInput)
               iframeDoc.body.addEventListener('blur', handleInput)
               iframeDoc.body.addEventListener('paste', handlePaste)
+              
+              // Adicionar listeners para atualizar toolbar quando seleção mudar
+              const handleSelectionChange = () => {
+                setTimeout(() => updateToolbarState(), 50)
+              }
+              iframeDoc.addEventListener('selectionchange', handleSelectionChange)
+              iframeDoc.addEventListener('mouseup', handleSelectionChange)
+              iframeDoc.addEventListener('keyup', handleSelectionChange)
+              iframeDoc.addEventListener('click', handleSelectionChange)
             }
           } catch (error) {
             console.error('Erro ao tornar iframe editável:', error)
@@ -431,6 +603,178 @@ ${bodyContent}
                   {/* Modo Visual - Editor WYSIWYG */}
                   {editorMode === 'visual' && (
                     <div className="editor-visual-container">
+                      {/* Toolbar de Formatação */}
+                      <div className="editor-toolbar">
+                        {/* Formatação de Texto */}
+                        <div className="toolbar-group">
+                          <button
+                            type="button"
+                            className={`toolbar-btn ${toolbarState.bold ? 'active' : ''}`}
+                            onClick={() => executeCommand('bold')}
+                            title="Negrito (Ctrl+B)"
+                            disabled={isSending}
+                          >
+                            <FontAwesomeIcon icon={faBold} />
+                          </button>
+                          <button
+                            type="button"
+                            className={`toolbar-btn ${toolbarState.italic ? 'active' : ''}`}
+                            onClick={() => executeCommand('italic')}
+                            title="Itálico (Ctrl+I)"
+                            disabled={isSending}
+                          >
+                            <FontAwesomeIcon icon={faItalic} />
+                          </button>
+                          <button
+                            type="button"
+                            className={`toolbar-btn ${toolbarState.underline ? 'active' : ''}`}
+                            onClick={() => executeCommand('underline')}
+                            title="Sublinhado (Ctrl+U)"
+                            disabled={isSending}
+                          >
+                            <FontAwesomeIcon icon={faUnderline} />
+                          </button>
+                          <button
+                            type="button"
+                            className={`toolbar-btn ${toolbarState.strikethrough ? 'active' : ''}`}
+                            onClick={() => executeCommand('strikeThrough')}
+                            title="Tachado"
+                            disabled={isSending}
+                          >
+                            <FontAwesomeIcon icon={faStrikethrough} />
+                          </button>
+                        </div>
+
+                        <div className="toolbar-separator" />
+
+                        {/* Cores */}
+                        <div className="toolbar-group">
+                          <div className="toolbar-color-picker">
+                            <FontAwesomeIcon icon={faPalette} />
+                            <input
+                              type="color"
+                              value={toolbarState.fontColor}
+                              onChange={handleFontColorChange}
+                              title="Cor do texto"
+                              disabled={isSending}
+                            />
+                          </div>
+                          <div className="toolbar-color-picker">
+                            <FontAwesomeIcon icon={faFill} />
+                            <input
+                              type="color"
+                              value={toolbarState.backgroundColor}
+                              onChange={handleBackgroundColorChange}
+                              title="Cor de fundo"
+                              disabled={isSending}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="toolbar-separator" />
+
+                        {/* Tamanho da Fonte */}
+                        <div className="toolbar-group">
+                          <select
+                            className="toolbar-select"
+                            value={toolbarState.fontSize}
+                            onChange={handleFontSizeChange}
+                            title="Tamanho da fonte"
+                            disabled={isSending}
+                          >
+                            <option value="1">Pequeno</option>
+                            <option value="2">Normal</option>
+                            <option value="3">Médio</option>
+                            <option value="4">Grande</option>
+                            <option value="5">Muito Grande</option>
+                            <option value="6">Extra Grande</option>
+                            <option value="7">Máximo</option>
+                          </select>
+                        </div>
+
+                        <div className="toolbar-separator" />
+
+                        {/* Alinhamento */}
+                        <div className="toolbar-group">
+                          <button
+                            type="button"
+                            className="toolbar-btn"
+                            onClick={() => executeCommand('justifyLeft')}
+                            title="Alinhar à esquerda"
+                            disabled={isSending}
+                          >
+                            <FontAwesomeIcon icon={faAlignLeft} />
+                          </button>
+                          <button
+                            type="button"
+                            className="toolbar-btn"
+                            onClick={() => executeCommand('justifyCenter')}
+                            title="Centralizar"
+                            disabled={isSending}
+                          >
+                            <FontAwesomeIcon icon={faAlignCenter} />
+                          </button>
+                          <button
+                            type="button"
+                            className="toolbar-btn"
+                            onClick={() => executeCommand('justifyRight')}
+                            title="Alinhar à direita"
+                            disabled={isSending}
+                          >
+                            <FontAwesomeIcon icon={faAlignRight} />
+                          </button>
+                          <button
+                            type="button"
+                            className="toolbar-btn"
+                            onClick={() => executeCommand('justifyFull')}
+                            title="Justificar"
+                            disabled={isSending}
+                          >
+                            <FontAwesomeIcon icon={faAlignJustify} />
+                          </button>
+                        </div>
+
+                        <div className="toolbar-separator" />
+
+                        {/* Listas */}
+                        <div className="toolbar-group">
+                          <button
+                            type="button"
+                            className="toolbar-btn"
+                            onClick={() => executeCommand('insertUnorderedList')}
+                            title="Lista com marcadores"
+                            disabled={isSending}
+                          >
+                            <FontAwesomeIcon icon={faListUl} />
+                          </button>
+                          <button
+                            type="button"
+                            className="toolbar-btn"
+                            onClick={() => executeCommand('insertOrderedList')}
+                            title="Lista numerada"
+                            disabled={isSending}
+                          >
+                            <FontAwesomeIcon icon={faListOl} />
+                          </button>
+                        </div>
+
+                        <div className="toolbar-separator" />
+
+                        {/* Link */}
+                        <div className="toolbar-group">
+                          <button
+                            type="button"
+                            className="toolbar-btn"
+                            onClick={handleInsertLink}
+                            title="Inserir link"
+                            disabled={isSending}
+                          >
+                            <FontAwesomeIcon icon={faLink} />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Editor iframe */}
                       <iframe
                         ref={iframeRef}
                         className="editor-visual-iframe"
@@ -439,8 +783,8 @@ ${bodyContent}
                         style={{
                           width: '100%',
                           minHeight: '500px',
-                          border: '1px solid rgba(255, 255, 255, 0.2)',
-                          borderRadius: '4px',
+                          border: 'none',
+                          borderRadius: '0 0 4px 4px',
                           background: 'white'
                         }}
                       />

@@ -1,6 +1,8 @@
 import React from 'react'
 import { useQuery } from 'react-query'
 import api from '../services/api'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faCheckCircle, faExclamationTriangle, faTimesCircle, faQuestionCircle } from '@fortawesome/free-solid-svg-icons'
 import './ScanDetailsModal.css'
 
 const ScanDetailsModal = ({ siteId, siteDomain, onClose }) => {
@@ -27,7 +29,14 @@ const ScanDetailsModal = ({ siteId, siteDomain, onClose }) => {
   }
 
   const getStatusIcon = (status) => {
-    return <span className={`status-icon-small ${status}`}></span>
+    const iconMap = {
+      'clean': faCheckCircle,
+      'warning': faExclamationTriangle,
+      'infected': faTimesCircle,
+      'unknown': faQuestionCircle
+    }
+    const icon = iconMap[status] || faQuestionCircle
+    return <FontAwesomeIcon icon={icon} className={`status-icon-small ${status}`} />
   }
 
   const getStatusLabel = (status) => {

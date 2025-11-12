@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import api from '../services/api'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faSearch, faEnvelope, faTrash, faSpinner, faEdit, faShieldAlt } from '@fortawesome/free-solid-svg-icons'
+import { faEnvelope, faTrash, faSpinner, faEdit, faShieldAlt, faPaperPlane, faRedo } from '@fortawesome/free-solid-svg-icons'
 import ReportModal from '../components/ReportModal'
 import ConfirmModal from '../components/ConfirmModal'
 import AlertModal from '../components/AlertModal'
@@ -676,7 +676,7 @@ const Dashboard = () => {
                             title="Escanear site"
                           >
                             <FontAwesomeIcon 
-                              icon={scanningSiteId === site.id ? faSpinner : faShieldAlt} 
+                              icon={scanningSiteId === site.id ? faSpinner : faRedo} 
                               spin={scanningSiteId === site.id}
                             />
                           </button>
@@ -688,7 +688,7 @@ const Dashboard = () => {
                             title="Enviar relatório por email"
                           >
                             <FontAwesomeIcon 
-                              icon={sendingReportId === site.id ? faSpinner : faEnvelope} 
+                              icon={sendingReportId === site.id ? faSpinner : faPaperPlane} 
                               spin={sendingReportId === site.id}
                             />
                           </button>

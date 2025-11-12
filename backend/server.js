@@ -26,16 +26,16 @@ app.set('trust proxy', 1);
 // SEMPRE permitir origens de produção (independente de NODE_ENV)
 // Isso resolve problemas quando NODE_ENV não está configurado no servidor
 const productionOrigins = [
-  'https://gestao.artnaweb.com.br',
-  'https://www.gestao.artnaweb.com.br',
-  'https://api.gestao.artnaweb.com.br'
+      'https://gestao.artnaweb.com.br',
+      'https://www.gestao.artnaweb.com.br',
+      'https://api.gestao.artnaweb.com.br'
 ];
 
 // Origens permitidas em desenvolvimento
 const developmentOrigins = [
-  'http://localhost:3000',
-  'http://127.0.0.1:3000'
-];
+      'http://localhost:3000',
+      'http://127.0.0.1:3000'
+    ];
 
 // SEMPRE permitir ambas as origens (produção + desenvolvimento)
 // Isso garante que funcione mesmo se NODE_ENV não estiver configurado

@@ -690,123 +690,6 @@ const SitesWordfenceConfig = () => {
   )
 }
 
-// Componente de Preview do Email de Relatórios
-const ReportEmailPreview = ({ template, defaultTemplate }) => {
-  // Dados de exemplo para o preview - usando dados mais realistas do novo template
-  const previewData = {
-    clientName: 'João Silva',
-    clientEmail: 'joao@exemplo.com.br',
-    clientPhone: '(11) 99999-9999',
-    reportDate: new Date().toLocaleString('pt-BR'),
-    totalSites: '2',
-    sitesList: `
-      <div class="site-section">
-        <div class="site-header">
-          <h2>🌐 exemplo1.com.br</h2>
-          <span class="status-badge status-clean">Monitorado e Seguro</span>
-        </div>
-        <div class="monitoring-active">
-          <div class="icon">🟢</div>
-          <div class="text">Monitoramento ativo 24/7 - Seu site está sendo protegido continuamente</div>
-        </div>
-        <div class="metrics-grid">
-          <div class="metric-card">
-            <div class="metric-label">Disponibilidade (Uptime)</div>
-            <div class="metric-value good">99.95%</div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-label">Tempo de Resposta</div>
-            <div class="metric-value good">245ms</div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-label">Classificação de Segurança</div>
-            <div class="metric-value good">A</div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-label">Última Varredura</div>
-            <div class="metric-value" style="font-size: 16px;">${new Date().toLocaleDateString('pt-BR')}</div>
-          </div>
-        </div>
-        <div class="section-title">🔒 Status de Segurança</div>
-        <div class="info-grid">
-          <div class="info-item">
-            <div class="info-label">Malware</div>
-            <div class="info-value" style="color: #059669;">✅ Protegido</div>
-            <div class="info-description">Nenhum malware detectado - site seguro</div>
-          </div>
-          <div class="info-item">
-            <div class="info-label">Blacklist</div>
-            <div class="info-value" style="color: #059669;">✅ Limpo</div>
-            <div class="info-description">Não listado em blacklists - status limpo</div>
-          </div>
-          <div class="info-item">
-            <div class="info-label">Certificado SSL</div>
-            <div class="info-value" style="color: #059669;">✅ Ativo</div>
-            <div class="info-description">Certificado SSL válido</div>
-          </div>
-          <div class="info-item">
-            <div class="info-label">Headers de Segurança</div>
-            <div class="info-value" style="color: #059669;">5/5 Configurados</div>
-            <div class="info-description">Proteção adicional ativa</div>
-          </div>
-        </div>
-      </div>
-    `
-  }
-
-  // Usar template fornecido ou template padrão
-  const templateToUse = (template && template.trim() !== '') ? template : (defaultTemplate || '')
-
-  // Substituir variáveis no template
-  const renderPreview = () => {
-    if (!templateToUse || templateToUse.trim() === '') {
-      return (
-        <div style={{ 
-          padding: '40px', 
-          textAlign: 'center', 
-          color: '#999',
-          background: '#f9f9f9',
-          borderRadius: '8px',
-          margin: '20px'
-        }}>
-          <p style={{ fontSize: '16px', marginBottom: '10px' }}>Carregando template padrão...</p>
-          <p style={{ fontSize: '14px' }}>O template padrão profissional será usado quando o relatório for enviado.</p>
-        </div>
-      )
-    }
-
-    let rendered = templateToUse
-    Object.keys(previewData).forEach(key => {
-      const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g')
-      rendered = rendered.replace(regex, previewData[key] || '')
-    })
-
-    return rendered
-  }
-
-  const renderedHTML = renderPreview()
-
-  return (
-    <div className="email-preview-wrapper">
-      <div className="email-preview-content">
-        <iframe
-          srcDoc={renderedHTML}
-          className="email-preview-iframe"
-          title="Report Email Preview"
-          sandbox="allow-same-origin"
-        />
-      </div>
-      <div className="email-preview-info">
-        <p className="preview-note">
-          <strong>📝 Nota:</strong> Esta é uma pré-visualização com dados de exemplo. 
-          Os valores reais serão substituídos quando o relatório for enviado.
-          {!template || template.trim() === '' ? ' (Mostrando template padrão)' : ''}
-        </p>
-      </div>
-    </div>
-  )
-}
-
 const Settings = () => {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -838,22 +721,6 @@ const Settings = () => {
   const [saving, setSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
   const [loadingDefaultTemplate, setLoadingDefaultTemplate] = useState(false)
-  const [defaultReportTemplate, setDefaultReportTemplate] = useState(null)
-
-  // Carregar template padrão do backend ao montar o componente
-  useEffect(() => {
-    const loadDefaultTemplate = async () => {
-      try {
-        const response = await api.get('/settings/default-report-template')
-        if (response.data.success) {
-          setDefaultReportTemplate(response.data.data.template)
-        }
-      } catch (error) {
-        console.error('Error loading default template:', error)
-      }
-    }
-    loadDefaultTemplate()
-  }, [])
 
   useEffect(() => {
     if (settingsData) {
@@ -893,17 +760,6 @@ const Settings = () => {
     }
   }
 
-  // Função para limpar template e voltar ao padrão
-  const clearReportTemplate = () => {
-    updateSetting('report_email_template', '')
-    setAlertModal({
-      isOpen: true,
-      type: 'info',
-      title: 'Template Limpo',
-      message: 'O template foi limpo. O template padrão profissional será usado automaticamente quando os relatórios forem enviados.',
-      buttonText: 'OK'
-    })
-  }
 
   const updateSetting = (key, value) => {
     setSettings(prev => ({
@@ -1404,6 +1260,18 @@ const Settings = () => {
                   </div>
 
                   <div className="setting-item">
+                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                      <button
+                        className="btn btn-secondary"
+                        onClick={loadDefaultReportTemplate}
+                        disabled={loadingDefaultTemplate}
+                      >
+                        {loadingDefaultTemplate ? 'Carregando...' : 'Carregar Template Padrão'}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="setting-item">
                     <div className="variables-info">
                       <strong>Variáveis disponíveis:</strong>
                       <ul>
@@ -1416,48 +1284,6 @@ const Settings = () => {
                       </ul>
                     </div>
                   </div>
-
-                  <div className="setting-item">
-                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                      <button
-                        className="btn btn-secondary"
-                        onClick={loadDefaultReportTemplate}
-                        disabled={loadingDefaultTemplate}
-                      >
-                        {loadingDefaultTemplate ? 'Carregando...' : '📥 Carregar Template Padrão'}
-                      </button>
-                      {settings.report_email_template && settings.report_email_template.trim() !== '' && (
-                        <button
-                          className="btn btn-secondary"
-                          onClick={clearReportTemplate}
-                          style={{ background: 'rgba(255, 255, 255, 0.1)' }}
-                        >
-                          🗑️ Limpar Template
-                        </button>
-                      )}
-                    </div>
-                    <p style={{ marginTop: '10px', fontSize: '13px', color: '#999', fontStyle: 'italic' }}>
-                      {settings.report_email_template && settings.report_email_template.trim() !== '' 
-                        ? '✅ Um template personalizado está definido. Clique em "Carregar Template Padrão" para ver/editar o template profissional padrão, ou "Limpar Template" para voltar a usar o padrão automaticamente.' 
-                        : 'ℹ️ Nenhum template personalizado definido. O template padrão profissional será usado automaticamente quando os relatórios forem enviados. Clique em "Carregar Template Padrão" para visualizá-lo e editá-lo se desejar.'}
-                    </p>
-                  </div>
-                  
-                  {/* Preview do Template */}
-                  {defaultReportTemplate && (
-                    <div className="setting-item">
-                      <label>
-                        <span className="label-text">Preview do Template</span>
-                        <span className="label-description">
-                          Visualização do template de relatório (com dados de exemplo)
-                        </span>
-                      </label>
-                      <ReportEmailPreview 
-                        template={settings.report_email_template || ''} 
-                        defaultTemplate={defaultReportTemplate}
-                      />
-                    </div>
-                  )}
                 </div>
               </>
             )}

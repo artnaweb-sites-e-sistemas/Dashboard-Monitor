@@ -139,23 +139,30 @@ function getProfessionalReportTemplate() {
     }
     .metric-card {
       background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-      padding: 18px;
-      border-radius: 8px;
+      padding: 20px;
+      border-radius: 10px;
       text-align: center;
       border: 1px solid #e0e0e0;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .metric-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.06);
     }
     .metric-label {
       font-size: 12px;
       color: #666;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      margin-bottom: 8px;
+      margin-bottom: 12px;
+      font-weight: 600;
     }
     .metric-value {
       font-size: 24px;
       font-weight: 700;
       color: #333;
+      line-height: 1.3;
     }
     .metric-value.good { color: #059669; }
     .metric-value.warning { color: #d97706; }
@@ -647,33 +654,19 @@ function formatSiteCardProfessional(site, scanDetails, uptimeData) {
       <!-- Métricas Principais -->
       <div class="metrics-grid">
         <div class="metric-card">
-          <div class="metric-label">Disponibilidade (Uptime)</div>
+          <div class="metric-label">Disponibilidade</div>
           ${isClean ? `
             <div class="metric-value ${uptimeRatioClass || 'good'}">${uptimeRatio}</div>
-            <div style="margin-top: 5px;">
-              <span class="status-badge ${uptimeStatusClass}" style="font-size: 11px; padding: 4px 8px;">
-                ${uptimeStatusText}
-              </span>
-            </div>
           ` : `
-            <div style="margin-top: 8px;">
-              <span class="status-badge status-online" style="font-size: 11px; padding: 4px 8px;">
-                MONITORANDO
-              </span>
-            </div>
+            <div class="metric-value good" style="margin-top: 8px;">Monitorando...</div>
           `}
         </div>
         <div class="metric-card">
           <div class="metric-label">Tempo de Resposta</div>
           ${isClean ? `
             <div class="metric-value ${responseTimeClass || 'good'}">${responseTime}</div>
-            ${uptimeLastCheck ? `<div style="margin-top: 5px; font-size: 11px; color: #666;">Última verificação: ${uptimeLastCheck}</div>` : ''}
           ` : `
-            <div style="margin-top: 8px;">
-              <span class="status-badge status-online" style="font-size: 11px; padding: 4px 8px;">
-                MONITORANDO
-              </span>
-            </div>
+            <div class="metric-value good" style="margin-top: 8px;">Monitorando...</div>
           `}
         </div>
         <div class="metric-card">
@@ -682,17 +675,8 @@ function formatSiteCardProfessional(site, scanDetails, uptimeData) {
             <div class="metric-value good">${securityRating}</div>
             ${securityScore ? `<div style="margin-top: 5px; font-size: 11px; color: #666;">${securityScore}</div>` : ''}
           ` : `
-            <div style="margin-top: 8px;">
-              <span class="status-badge status-online" style="font-size: 11px; padding: 4px 8px;">
-                MONITORANDO
-              </span>
-            </div>
+            <div class="metric-value good" style="margin-top: 8px;">N/A</div>
           `}
-        </div>
-        <div class="metric-card">
-          <div class="metric-label">Última Varredura</div>
-          <div class="metric-value" style="font-size: 16px;">${scanDate}</div>
-          ${monitoringSince ? `<div style="margin-top: 5px; font-size: 11px; color: #666;">Monitorado há ${monitoringSince}</div>` : ''}
         </div>
       </div>
       
